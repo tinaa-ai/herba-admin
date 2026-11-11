@@ -109,10 +109,10 @@ export default function CompetitorsPage() {
       </div>
 
       {/* 요약 */}
-      <section className="mb-10 overflow-x-auto rounded-xl border border-line bg-surface">
+      <section className="mb-10 overflow-x-auto rounded-xl border border-hero-line bg-hero">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-line text-left text-xs text-muted">
+            <tr className="border-b border-hero-line text-left text-xs text-muted">
               <th className="whitespace-nowrap px-4 py-2.5 font-medium">제품</th>
               <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">용량</th>
               <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">정가</th>
@@ -124,7 +124,7 @@ export default function CompetitorsPage() {
           </thead>
           <tbody>
             {products.map(({ product, rows, lowest }) => (
-              <tr key={product.id} className="border-b border-line last:border-0">
+              <tr key={product.id} className="border-b border-hero-line last:border-0">
                 <td className="px-4 py-3">
                   <a href={`#${product.id}`} className="group flex items-center gap-3">
                     <ProductPhoto product={product} size={40} />
@@ -151,7 +151,7 @@ export default function CompetitorsPage() {
                     "—"
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-accent">
+                <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-sale">
                   {lowest ? `${lowest.discountPct.toFixed(1)}%` : "—"}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-muted">{rows.length}</td>
@@ -159,7 +159,7 @@ export default function CompetitorsPage() {
             ))}
           </tbody>
         </table>
-        <p className="border-t border-line px-4 py-2.5 text-xs text-muted">
+        <p className="border-t border-hero-line px-4 py-2.5 text-xs text-muted">
           최저 확인가는 국내 일반 판매가 기준입니다. 면세점, 과거 가격, 품절, 비교 제외 표시 가격은 빼고 계산했어요.
         </p>
       </section>

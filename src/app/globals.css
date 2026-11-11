@@ -9,6 +9,9 @@
   --subtle: #f1f0ec;
   --accent: #2f6b4f;
   --accent-soft: #e3efe8;
+  --hero: #fcf2f0;
+  --hero-line: #f2dfdb;
+  --sale: #c62f2f;
   --warn: #b4532a;
   --warn-soft: #f8e9e2;
 }
@@ -23,6 +26,9 @@
     --subtle: #232323;
     --accent: #7cc4a0;
     --accent-soft: #1d3329;
+    --hero: #221715;
+    --hero-line: #3a2724;
+    --sale: #f07870;
     --warn: #e59473;
     --warn-soft: #3a241b;
   }
@@ -37,6 +43,9 @@
   --color-subtle: var(--subtle);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-hero: var(--hero);
+  --color-hero-line: var(--hero-line);
+  --color-sale: var(--sale);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
