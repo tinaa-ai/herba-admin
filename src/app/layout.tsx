@@ -3,7 +3,10 @@ import { TabNav } from "@/components/TabNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Herba Admin",
+  title: {
+    default: "HERBA | Admin",
+    template: "HERBA | %s",
+  },
   description: "레우비스 내부 관리 도구",
 };
 

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
-  title: "로그인 · Herba Admin",
+  title: "로그인",
 };
 
 export default function LoginPage() {

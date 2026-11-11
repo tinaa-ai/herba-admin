@@ -10,7 +10,7 @@ import {
 } from "@/data/competitor-prices";
 
 export const metadata: Metadata = {
-  title: "경쟁사 제품 비교 · Herba Admin",
+  title: "경쟁사 제품 비교",
 };
 
 const won = (n: number) => Math.round(n).toLocaleString("ko-KR");

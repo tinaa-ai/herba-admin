@@ -19,6 +19,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // 정적 파일, 이미지 최적화, 파비콘, 제품 사진은 검사하지 않는다
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|products/).*)"],
+  // 정적 파일, 이미지 최적화, 파비콘·앱 아이콘, 제품 사진은 검사하지 않는다
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|products/).*)"],
 };
