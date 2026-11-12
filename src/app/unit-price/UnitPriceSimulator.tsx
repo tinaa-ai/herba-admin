@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_STATE, PRODUCT, QUOTE, type Channel, type CostItem, type SimState } from "@/data/unit-price";
+import { PriceSummary } from "./PriceSummary";
+import { NumberInput, ceil100, pct, won } from "./ui";
 
 // v2: 모든 금액을 VAT 포함으로 바꾸면서 예전(VAT 별도) 저장값은 버려요
 const STORAGE_KEY = "herba.unit-price.v2";
 
-const won = (n: number) => Math.round(n).toLocaleString("ko-KR");
-const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
-const ceil100 = (n: number) => Math.ceil(n / 100) * 100;
 const newId = () => Math.random().toString(36).slice(2, 9);
 
 function loadState(): SimState | null {
@@ -24,6 +23,7 @@ function loadState(): SimState | null {
         ...c,
         main: c.main ?? def?.main ?? false,
         discount: c.discount ?? def?.discount ?? 0,
+        everyday: c.everyday ?? def?.everyday ?? false,
         name: c.id === "naver" && c.name === "네이버 스마트스토어" ? (def?.name ?? c.name) : c.name,
       };
     });
@@ -31,45 +31,6 @@ function loadState(): SimState | null {
   } catch {
     return null;
   }
-}
-
-function NumberInput({
-  value,
-  onChange,
-  suffix,
-  label,
-  className = "",
-}: {
-  value: number;
-  onChange: (n: number) => void;
-  suffix?: string;
-  label: string;
-  className?: string;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-  return (
-    <label
-      className={`flex items-center rounded-md border border-line bg-surface focus-within:border-foreground ${className}`}
-    >
-      <span className="sr-only">{label}</span>
-      <input
-        inputMode="decimal"
-        value={draft ?? value.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}
-        onFocus={(e) => {
-          setDraft(String(value));
-          requestAnimationFrame(() => e.target.select());
-        }}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          const n = Number(e.target.value.replace(/,/g, ""));
-          if (Number.isFinite(n)) onChange(n);
-        }}
-        onBlur={() => setDraft(null)}
-        className="w-full min-w-0 bg-transparent px-2 py-1.5 text-right text-sm tabular-nums outline-none"
-      />
-      {suffix && <span className="pr-2 text-xs text-muted">{suffix}</span>}
-    </label>
-  );
 }
 
 const CARD_TONE = {
@@ -285,6 +246,8 @@ export function UnitPriceSimulator() {
 
   return (
     <div className="space-y-6">
+      <PriceSummary state={state} setState={setState} unitCostTotal={unitCostTotal} sgaPerUnit={sgaPerUnit} />
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile
           label="제조 공급가 (견적)"

@@ -33,7 +33,12 @@ export type Channel = {
   discount: number;
   /** 주력 채널: 표 맨 위에 따로 묶어 보여줌 */
   main?: boolean;
+  /** 상시 할인율을 바꾸면 이 채널 할인율도 같이 바뀜 */
+  everyday?: boolean;
 };
+
+/** 약국 유통사 제안안: tiers[i] 수량일 때 정가 대비 discounts[i]% 할인한 공급가 */
+export type DistributorPlan = { id: string; name: string; note: string; discounts: number[] };
 
 export type SimState = {
   unitCosts: CostItem[];
@@ -44,6 +49,13 @@ export type SimState = {
   price: number;
   /** 최저가 하한선: 실판매가가 이보다 낮으면 경고 */
   floorPrice: number;
+  /** 상시 할인율 % (자사몰·브랜드스토어 기본 판매가) */
+  everydayDiscount: number;
+  /** 약국 유통사(매입 유통) 수량 구간 */
+  distributorTiers: number[];
+  distributorPlans: DistributorPlan[];
+  /** 미팅 제안가로 쓰는 안 */
+  selectedPlan: string;
   targetMargin: number;
   channels: Channel[];
 };
@@ -70,10 +82,27 @@ export const DEFAULT_STATE: SimState = {
   quantity: 10000,
   price: 24900,
   floorPrice: 19900,
+  everydayDiscount: 10,
+  distributorTiers: [1000, 3000, 5000, 10000, 30000, 50000],
+  distributorPlans: [
+    { id: "p1", name: "1안", note: "마진 우선", discounts: [45, 46, 47, 49, 51, 53] },
+    { id: "p2", name: "2안", note: "기본", discounts: [50, 51, 52, 54, 56, 58] },
+    { id: "p3", name: "3안", note: "물량 우선", discounts: [55, 56, 57, 59, 62, 65] },
+  ],
+  selectedPlan: "p2",
   targetMargin: 20,
   channels: [
-    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 10, shipping: true, main: true },
-    { id: "naver", name: "네이버 브랜드스토어", fee: 7, card: 0, discount: 10, shipping: true, main: true },
+    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 10, shipping: true, main: true, everyday: true },
+    {
+      id: "naver",
+      name: "네이버 브랜드스토어",
+      fee: 7,
+      card: 0,
+      discount: 10,
+      shipping: true,
+      main: true,
+      everyday: true,
+    },
     { id: "pharmacy", name: "약국", fee: 40, card: 0, discount: 0, shipping: false, main: true },
     { id: "oliveyoung", name: "올리브영", fee: 60, card: 0, discount: 0, shipping: false },
     { id: "musinsa", name: "무신사", fee: 30, card: 0, discount: 0, shipping: true },
