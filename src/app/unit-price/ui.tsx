@@ -5,6 +5,9 @@ import { useRef, useState } from "react";
 export const won = (n: number) => Math.round(n).toLocaleString("ko-KR");
 export const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 export const ceil100 = (n: number) => Math.ceil(n / 100) * 100;
+/** 수량 구간 이름: "1,000~9,999개" 또는 "50,000개 이상" */
+export const tierLabel = (t: { from: number; to?: number }) =>
+  t.to !== undefined ? `${won(t.from)}~${won(t.to)}개` : `${won(t.from)}개 이상`;
 
 export function NumberInput({
   value,

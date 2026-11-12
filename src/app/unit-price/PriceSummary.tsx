@@ -1,7 +1,7 @@
 "use client";
 
 import { PRODUCT, type PharmacyTier, type SimState } from "@/data/unit-price";
-import { Fold, NumberInput, SortableStack, pct, won } from "./ui";
+import { Fold, NumberInput, SortableStack, pct, tierLabel, won } from "./ui";
 
 const VAT = 1.1;
 
@@ -27,8 +27,6 @@ function Stat({
     </div>
   );
 }
-
-const tierLabel = (t: PharmacyTier) => (t.to !== undefined ? `${won(t.from)}~${won(t.to)}개` : `${won(t.from)}개 이상`);
 
 /** 페이지 맨 위 요약: 정가 · 상시 할인가 · 하한선, 그 아래 접는 패널들 */
 export function PriceSummary({

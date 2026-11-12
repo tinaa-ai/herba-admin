@@ -317,11 +317,16 @@ export function UnitPriceSimulator() {
   const { unitCosts, fixedCosts, quantity, price, everydayDiscount, floorDiscount, targetMargin, channels } = state;
   // 판매가 = 상시 할인가. 판매가를 직접 고치면 상시 할인율이 거꾸로 계산돼요
   const sellingPrice = price * (1 - everydayDiscount / 100);
-  const setSellingPrice = (v: number) =>
+  // 판매가는 정가보다 높을 수 없어서 정가로 맞춰요. 그때는 입력칸 아래에 알려 줘요
+  const [typedSelling, setTypedSelling] = useState<number | null>(null);
+  const overList = typedSelling !== null && typedSelling > price;
+  const setSellingPrice = (v: number) => {
+    setTypedSelling(v);
     set(
       "everydayDiscount",
       price > 0 ? Math.round(Math.min(100, Math.max(0, (1 - v / price) * 100)) * 10000) / 10000 : 0,
     );
+  };
   const floorPrice = price * (1 - floorDiscount / 100);
 
   const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
@@ -484,6 +489,12 @@ export function UnitPriceSimulator() {
                         suffix="원"
                         className="[&_input]:py-2 [&_input]:text-lg [&_input]:font-semibold"
                       />
+                      {overList && (
+                        <p className="mt-1 rounded bg-warn-soft px-2 py-1 text-[11px] text-warn">
+                          판매가는 정가 {won(price)}원보다 높게 정할 수 없어서 정가로 맞췄어요. 더 높이려면 한눈에 보기의
+                          정가를 먼저 올려 주세요
+                        </p>
+                      )}
                       <p className="mt-1 text-[11px] text-muted">
                         = 한눈에 보기의 상시 할인가(실제 판매 금액). 정가 {won(price)}원에서 상시 할인{" "}
                         {Math.round(everydayDiscount * 10) / 10}%를 뺀 금액이고, 여기서 바꾸면 상시 할인율도 같이
@@ -548,6 +559,7 @@ export function UnitPriceSimulator() {
         exportPanel={
           <ExportPanel
             sim={state.exportSim}
+            calc={exportCalc}
             onChange={(fn) => setState((s) => ({ ...s, exportSim: fn(s.exportSim) }))}
             unitCostExVat={unitCostExVat}
             sgaExVat={sgaExVat}

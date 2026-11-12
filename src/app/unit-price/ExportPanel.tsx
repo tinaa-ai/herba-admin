@@ -1,19 +1,25 @@
 "use client";
 
 import type { CostItem, ExportSim, ExportTier } from "@/data/unit-price";
-import { NumberInput, pct, won } from "./ui";
+import { NumberInput, pct, tierLabel, won } from "./ui";
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const ceilCent = (n: number) => Math.ceil(n * 100) / 100;
 const mxn = (n: number) => `MX$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const jpy = (n: number) => `¥${Math.round(n).toLocaleString("ja-JP")}`;
-const tierLabel = (t: ExportTier) => (t.to !== undefined ? `${won(t.from)}~${won(t.to)}개` : `${won(t.from)}개 이상`);
 
 const Key = ({ children }: { children: React.ReactNode }) => <b className="font-semibold text-export">{children}</b>;
 
+/** 선적 1회당 비용 합계와 수출 때 개당 추가 비용 합계 */
+const exportTotals = (sim: ExportSim) => ({
+  shipment: sim.shipmentCosts.reduce((s, c) => s + c.amount, 0),
+  extras: sim.unitExtras.reduce((s, c) => s + c.amount, 0),
+});
+
+export type ExportCalc = ReturnType<typeof makeExportCalc>;
+
 export function makeExportCalc(sim: ExportSim, unitCostExVat: number, sgaExVat: number, listPrice: number) {
-  const shipment = sim.shipmentCosts.reduce((s, c) => s + c.amount, 0);
-  const extras = sim.unitExtras.reduce((s, c) => s + c.amount, 0);
+  const { shipment, extras } = exportTotals(sim);
   const sga = sim.includeSga ? sgaExVat : 0;
   return (t: ExportTier) => {
     const qty = t.orderQty ?? t.from;
@@ -37,7 +43,7 @@ export function makeExportCalc(sim: ExportSim, unitCostExVat: number, sgaExVat: 
   };
 }
 
-export function exportSummary(sim: ExportSim, calc: ReturnType<typeof makeExportCalc>) {
+export function exportSummary(sim: ExportSim, calc: ExportCalc) {
   const first = sim.tiers[0];
   const last = sim.tiers[sim.tiers.length - 1];
   if (!first || !last) return null;
@@ -80,20 +86,21 @@ function ItemInputs({
 /** 수출(FOB) 단가 산정: 설정값 + 수량 구간별 FOB 단가와 헤르바 남는 금액 */
 export function ExportPanel({
   sim,
+  calc,
   onChange,
   unitCostExVat,
   sgaExVat,
   listPrice,
 }: {
   sim: ExportSim;
+  /** 부모에서 이미 만든 계산 함수 (요약 줄과 같은 값을 써요) */
+  calc: ExportCalc;
   onChange: (fn: (s: ExportSim) => ExportSim) => void;
   unitCostExVat: number;
   sgaExVat: number;
   listPrice: number;
 }) {
-  const calc = makeExportCalc(sim, unitCostExVat, sgaExVat, listPrice);
-  const shipment = sim.shipmentCosts.reduce((s, c) => s + c.amount, 0);
-  const extras = sim.unitExtras.reduce((s, c) => s + c.amount, 0);
+  const { shipment, extras } = exportTotals(sim);
   const setTier = (id: string, patch: Partial<ExportTier>) =>
     onChange((s) => ({ ...s, tiers: s.tiers.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
 

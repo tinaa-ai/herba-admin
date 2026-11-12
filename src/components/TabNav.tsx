@@ -57,8 +57,7 @@ function GroupTab({ group, pathname }: { group: TabGroup; pathname: string }) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={current ? open : undefined}
         onClick={onClick}
         className={`flex items-center gap-1 ${tabClass(!!current)}`}
       >
@@ -80,7 +79,6 @@ function GroupTab({ group, pathname }: { group: TabGroup; pathname: string }) {
       </button>
       {open && (
         <div
-          role="menu"
           className="absolute left-0 top-full z-20 mt-1 min-w-48 rounded-lg border border-line bg-surface py-1 shadow-lg"
         >
           {group.items.map((it) => {
@@ -89,7 +87,7 @@ function GroupTab({ group, pathname }: { group: TabGroup; pathname: string }) {
               <Link
                 key={it.href}
                 href={it.href}
-                role="menuitem"
+                aria-current={active ? "page" : undefined}
                 onClick={() => setOpen(false)}
                 className={`block whitespace-nowrap px-3 py-2 text-sm ${
                   active ? "bg-subtle font-medium text-foreground" : "text-muted hover:bg-subtle hover:text-foreground"
@@ -111,7 +109,7 @@ export function TabNav() {
 
   return (
     <>
-      <nav className="flex flex-1 gap-1">
+      <nav className="flex min-w-0 flex-1 flex-wrap gap-x-1">
         {tabs.map((tab) =>
           "items" in tab ? (
             <GroupTab key={tab.label} group={tab} pathname={pathname} />
