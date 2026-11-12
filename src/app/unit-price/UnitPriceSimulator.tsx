@@ -20,6 +20,9 @@ function loadState(): SimState | null {
     if (merged.price === 24900) merged.price = DEFAULT_STATE.price;
     // 하한선을 금액(floorPrice)에서 할인율(floorDiscount)로 바꿨어요. 옛 저장값의 floorPrice는 버려요
     delete (merged as Partial<SimState> & { floorPrice?: number }).floorPrice;
+    // 약국 유통 1·2·3안(distributorPlans)을 수량 구간별 공급률(pharmacyTiers) 하나로 바꿨어요
+    for (const key of ["distributorTiers", "distributorPlans", "selectedPlan"])
+      delete (merged as Record<string, unknown>)[key];
     // 주력 채널 표시가 생기기 전에 저장된 값이면 기본값의 주력 여부와 새 이름을 이어받아요
     merged.channels = merged.channels.map((c) => {
       const def = DEFAULT_STATE.channels.find((d) => d.id === c.id);

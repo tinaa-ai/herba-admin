@@ -1,6 +1,6 @@
 "use client";
 
-import { PRODUCT, type SimState } from "@/data/unit-price";
+import { PRODUCT, type PharmacyTier, type SimState } from "@/data/unit-price";
 import { Fold, NumberInput, pct, won } from "./ui";
 
 const VAT = 1.1;
@@ -8,24 +8,31 @@ const VAT = 1.1;
 function Stat({
   label,
   value,
+  tag,
   children,
   highlight,
 }: {
   label: string;
   value: string;
+  tag?: string;
   children?: React.ReactNode;
   highlight?: boolean;
 }) {
   return (
     <div className={`rounded-xl border px-4 py-3 ${highlight ? "border-hero-line bg-hero" : "border-line bg-surface"}`}>
       <p className={`text-xs ${highlight ? "font-medium text-sale" : "text-muted"}`}>{label}</p>
-      <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
+      <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">
+        {value}
+        {tag && <span className="ml-1.5 align-middle text-[11px] font-normal text-muted">{tag}</span>}
+      </p>
       <div className="mt-1 space-y-1.5 text-[11px] text-muted">{children}</div>
     </div>
   );
 }
 
-/** 페이지 맨 위 요약: 정가 · 상시 할인가 · 하한선 · 약국 유통사 수량별 제안 단가 */
+const tierLabel = (t: PharmacyTier) => (t.to !== undefined ? `${won(t.from)}~${won(t.to)}개` : `${won(t.from)}개 이상`);
+
+/** 페이지 맨 위 요약: 정가 · 상시 할인가 · 하한선 · 약국 유통 수량별 공급가 */
 export function PriceSummary({
   state,
   setState,
@@ -42,18 +49,22 @@ export function PriceSummary({
   detail: React.ReactNode;
   detailSummary: React.ReactNode;
 }) {
-  const { price, everydayDiscount, floorDiscount, distributorTiers, distributorPlans, selectedPlan } = state;
+  const { price, everydayDiscount, floorDiscount, pharmacyTiers } = state;
   const everydayPrice = price * (1 - everydayDiscount / 100);
   const floorPrice = price * (1 - floorDiscount / 100);
 
   // 유통사 납품은 대량 입고라 개별 택배비 없이 원가 + 판관비만 들어가요
   const cost = unitCostTotal + sgaPerUnit;
-  const maxDiscount = price > 0 ? Math.max(0, 1 - cost / price) : 0;
+  const minRate = price > 0 ? Math.min(1, cost / price) : 0;
 
-  const plan = distributorPlans.find((p) => p.id === selectedPlan) ?? distributorPlans[0];
-  const supplyAt = (d: number) => price * (1 - d / 100);
-  const proposal = plan ? supplyAt(plan.discounts[0] ?? 0) : 0;
-  const proposalLast = plan ? supplyAt(plan.discounts[plan.discounts.length - 1] ?? 0) : 0;
+  const calc = (t: PharmacyTier) => {
+    const supply = price * (t.rate / 100); // VAT 포함
+    const profit = supply - cost;
+    const exampleQty = t.to ?? t.from;
+    return { supply, supplyEx: supply / VAT, share: price - supply, profit, exampleQty };
+  };
+  const first = pharmacyTiers[0];
+  const last = pharmacyTiers[pharmacyTiers.length - 1];
 
   const setEveryday = (v: number) =>
     setState((s) => ({
@@ -61,21 +72,16 @@ export function PriceSummary({
       everydayDiscount: v,
       channels: s.channels.map((c) => (c.everyday ? { ...c, discount: v } : c)),
     }));
-  const setTier = (i: number, v: number) =>
-    setState((s) => ({ ...s, distributorTiers: s.distributorTiers.map((q, j) => (j === i ? v : q)) }));
-  const setDiscount = (planId: string, i: number, v: number) =>
-    setState((s) => ({
-      ...s,
-      distributorPlans: s.distributorPlans.map((p) =>
-        p.id === planId ? { ...p, discounts: p.discounts.map((d, j) => (j === i ? v : d)) } : p,
-      ),
-    }));
+  const setTier = (id: string, patch: Partial<PharmacyTier>) =>
+    setState((s) => ({ ...s, pharmacyTiers: s.pharmacyTiers.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
 
   return (
     <section className="rounded-2xl border border-line bg-surface p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold">한눈에 보기</h2>
-        <span className="text-xs text-muted">VAT 포함 · 칸을 눌러 바로 고칠 수 있어요</span>
+        <span className="text-xs text-muted">
+          VAT 포함 (약국 유통 공급가는 VAT 별도도 함께) · 칸을 눌러 바로 고칠 수 있어요
+        </span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -117,19 +123,29 @@ export function PriceSummary({
           </p>
         </Stat>
 
-        <Stat label={`약국 유통사 제안가 · ${plan?.name ?? ""}`} value={`${won(proposal)}원`} highlight>
-          <p className="text-foreground">
-            VAT 별도 <b className="font-semibold">{won(proposal / VAT)}원</b> · 정가 대비 {plan?.discounts[0] ?? 0}%
-            할인
-          </p>
-          <p>
-            {won(distributorTiers[0] ?? 0)}개부터 · {won(distributorTiers[distributorTiers.length - 1] ?? 0)}개면{" "}
-            {won(proposalLast)}원까지
-          </p>
-          <p>
-            개당 이익 {won(proposal - cost)}원 ({pct(proposal > 0 ? (proposal - cost) / proposal : 0)})
-          </p>
-        </Stat>
+        {first && (
+          <Stat
+            label={`약국 유통 공급가 · ${tierLabel(first)}`}
+            value={`${won(calc(first).supplyEx)}원`}
+            tag="VAT 별도"
+            highlight
+          >
+            <p className="text-foreground">
+              공급률 {first.rate}% · VAT 포함 {won(calc(first).supply)}원
+            </p>
+            <p>
+              헤르바 개당 남는 금액{" "}
+              <b className={`font-semibold ${calc(first).profit < 0 ? "text-sale" : "text-accent"}`}>
+                {won(calc(first).profit)}원
+              </b>
+            </p>
+            {last && last !== first && (
+              <p>
+                {tierLabel(last)}는 공급률 {last.rate}% · {won(calc(last).supplyEx)}원
+              </p>
+            )}
+          </Stat>
+        )}
       </div>
 
       <div className="mt-4 space-y-3">
@@ -144,109 +160,101 @@ export function PriceSummary({
         <Fold
           id="distributor-sim"
           title="약국 유통"
-          subtitle="바로팜·편한가 등 매입 유통 · 수량별 제안 단가 1·2·3안"
+          subtitle="바로팜·편한가 등 매입 유통 · 수량별 공급가와 헤르바 남는 금액"
           summary={
-            plan && (
+            first &&
+            last && (
               <>
-                {plan.name} · {won(distributorTiers[0] ?? 0)}개 {won(proposal)}원 →{" "}
-                {won(distributorTiers[distributorTiers.length - 1] ?? 0)}개 {won(proposalLast)}원
+                {tierLabel(first)} {won(calc(first).supplyEx)}원 → {tierLabel(last)} {won(calc(last).supplyEx)}원 (VAT
+                별도)
               </>
             )
           }
         >
-          <div>
-            <p className="mb-2 px-1 text-xs text-muted">
-              공급가 = 정가 × (1 − 할인율) · 대량 입고라 택배비 제외 · 안 제목을 눌러 미팅 제안안을 골라요
-            </p>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] border-separate border-spacing-0 text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-muted">
-                    <th className="w-32 border-b border-line px-2 py-2 font-normal">주문 수량</th>
-                    {distributorPlans.map((p) => {
-                      const active = p.id === plan?.id;
-                      return (
-                        <th
-                          key={p.id}
-                          className={`border-b px-2 py-2 font-normal ${active ? "rounded-t-lg border-hero-line bg-hero" : "border-line"}`}
-                        >
-                          <button
-                            type="button"
-                            aria-pressed={active}
-                            onClick={() => setState((s) => ({ ...s, selectedPlan: p.id }))}
-                            className="flex w-full items-center gap-2 text-left"
-                          >
-                            <span
-                              className={`inline-block size-3 rounded-full border ${active ? "border-sale bg-sale" : "border-line"}`}
-                            />
-                            <span className={`text-sm ${active ? "font-semibold text-sale" : "text-foreground"}`}>
-                              {p.name}
-                            </span>
-                            <span>{p.note}</span>
-                            {active && <span className="ml-auto text-[11px] text-sale">미팅 제안안</span>}
-                          </button>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {distributorTiers.map((qty, i) => (
-                    <tr key={i}>
-                      <td className="border-b border-line px-2 py-2 align-top">
-                        <NumberInput
-                          label={`${i + 1}구간 수량`}
-                          value={qty}
-                          onChange={(v) => setTier(i, Math.max(0, v))}
-                          suffix="개"
-                        />
-                        {i === 0 && <p className="mt-1 text-[11px] text-muted">최소 주문 수량</p>}
-                      </td>
-                      {distributorPlans.map((p) => {
-                        const d = p.discounts[i] ?? 0;
-                        const supply = supplyAt(d);
-                        const profit = supply - cost;
-                        const active = p.id === plan?.id;
-                        return (
-                          <td
-                            key={p.id}
-                            className={`border-b px-2 py-2 align-top ${active ? "border-hero-line bg-hero" : "border-line"}`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
+          <p className="mb-2 px-1 text-xs text-muted">
+            공급률 = 정가 중 헤르바가 받는 비율 · 공급가 = 정가 × 공급률 · 나머지는 유통사와 약국 몫 · 대량 입고라
+            택배비 제외
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-xs text-muted">
+                  <th className="px-2 py-2 font-normal">주문 수량</th>
+                  <th className="w-24 px-2 py-2 text-right font-normal">공급률</th>
+                  <th className="px-2 py-2 text-right font-normal">공급가 (VAT 별도)</th>
+                  <th className="px-2 py-2 text-right font-normal">공급가 (VAT 포함)</th>
+                  <th className="px-2 py-2 text-right font-normal">유통·약국 몫</th>
+                  <th className="px-2 py-2 text-right font-normal">헤르바 개당 남는 금액</th>
+                  <th className="px-2 py-2 text-right font-normal">주문 시 헤르바 남는 금액</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pharmacyTiers.map((t) => {
+                  const r = calc(t);
+                  const loss = r.profit < 0;
+                  return (
+                    <tr key={t.id} className="border-b border-line last:border-0">
+                      <td className="px-2 py-2">
+                        <div className="flex items-center gap-1 text-xs text-muted">
+                          <NumberInput
+                            label="구간 시작 수량"
+                            value={t.from}
+                            onChange={(v) => setTier(t.id, { from: Math.max(0, v) })}
+                            className="w-24"
+                          />
+                          {t.to !== undefined ? (
+                            <>
+                              ~
                               <NumberInput
-                                label={`${p.name} ${won(qty)}개 할인율`}
-                                value={d}
-                                onChange={(v) => setDiscount(p.id, i, Math.min(100, Math.max(0, v)))}
-                                suffix="%"
-                                className="w-20 shrink-0"
+                                label="구간 끝 수량"
+                                value={t.to}
+                                onChange={(v) => setTier(t.id, { to: Math.max(0, v) })}
+                                className="w-24"
                               />
-                              <div className="text-right">
-                                <p className="font-semibold tabular-nums">{won(supply)}원</p>
-                                <p className="text-[11px] tabular-nums text-muted">VAT 별도 {won(supply / VAT)}원</p>
-                              </div>
-                            </div>
-                            <p
-                              className={`mt-1 text-right text-[11px] tabular-nums ${profit < 0 ? "text-sale" : "text-accent"}`}
-                            >
-                              개당 이익 {won(profit)}원 ({pct(supply > 0 ? profit / supply : 0)})
-                            </p>
-                            <p className="text-right text-[11px] tabular-nums text-muted">
-                              주문 금액 {won(supply * qty)}원
-                            </p>
-                          </td>
-                        );
-                      })}
+                              개
+                            </>
+                          ) : (
+                            <span className="whitespace-nowrap">개 이상</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <NumberInput
+                          label={`${tierLabel(t)} 공급률`}
+                          value={t.rate}
+                          onChange={(v) => setTier(t.id, { rate: Math.min(100, Math.max(0, v)) })}
+                          suffix="%"
+                        />
+                      </td>
+                      <td className="px-2 py-2 text-right text-base font-semibold tabular-nums">{won(r.supplyEx)}원</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-muted">{won(r.supply)}원</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-muted">
+                        {won(r.share)}원 <span className="text-[11px]">({100 - t.rate}%)</span>
+                      </td>
+                      <td
+                        className={`px-2 py-2 text-right font-semibold tabular-nums ${loss ? "text-sale" : "text-accent"}`}
+                      >
+                        {won(r.profit)}원
+                        <span className="block text-[11px] font-normal text-muted">
+                          공급가의 {pct(r.supply > 0 ? r.profit / r.supply : 0)}
+                        </span>
+                      </td>
+                      <td className={`px-2 py-2 text-right tabular-nums ${loss ? "text-sale" : ""}`}>
+                        {won(r.profit * r.exampleQty)}원
+                        <span className="block text-[11px] text-muted">{won(r.exampleQty)}개 기준</span>
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-2 text-[11px] text-muted">
-              개당 원가 {won(unitCostTotal)}원 + 판관비 {won(sgaPerUnit)}원 = {won(cost)}원이라, 정가 대비{" "}
-              <b className="font-medium text-foreground">{pct(maxDiscount)}</b> 할인(공급가 {won(cost)}원)까지가
-              손익분기예요. 판관비는 아래 판관비 칸의 판매 수량 기준이에요.
-            </p>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-muted">
+            헤르바 남는 금액 = 공급가(VAT 포함) − 개당 원가 {won(unitCostTotal)}원 − 개당 판관비 {won(sgaPerUnit)}원.
+            다른 표와 같이 VAT 포함 기준이고 부가세 정산(약 1/11)은 빼지 않았어요. 공급률이{" "}
+            <b className="font-medium text-foreground">{pct(minRate)}</b> 밑으로 내려가면 손해예요. 판관비는 정가 계산
+            디테일의 판매 수량 기준이에요.
+          </p>
         </Fold>
       </div>
     </section>

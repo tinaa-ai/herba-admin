@@ -37,8 +37,8 @@ export type Channel = {
   everyday?: boolean;
 };
 
-/** 약국 유통사 제안안: tiers[i] 수량일 때 정가 대비 discounts[i]% 할인한 공급가 */
-export type DistributorPlan = { id: string; name: string; note: string; discounts: number[] };
+/** 약국 유통사(매입 유통) 수량 구간. rate는 공급률: 정가의 몇 %를 받고 넘기는지 */
+export type PharmacyTier = { id: string; from: number; to?: number; rate: number };
 
 export type SimState = {
   unitCosts: CostItem[];
@@ -51,11 +51,8 @@ export type SimState = {
   floorDiscount: number;
   /** 상시 할인율 % (자사몰·브랜드스토어 기본 판매가) */
   everydayDiscount: number;
-  /** 약국 유통사(매입 유통) 수량 구간 */
-  distributorTiers: number[];
-  distributorPlans: DistributorPlan[];
-  /** 미팅 제안가로 쓰는 안 */
-  selectedPlan: string;
+  /** 약국 유통사(바로팜·편한가 등 매입 유통) 수량 구간별 공급률 */
+  pharmacyTiers: PharmacyTier[];
   targetMargin: number;
   channels: Channel[];
 };
@@ -83,13 +80,12 @@ export const DEFAULT_STATE: SimState = {
   price: 25000,
   floorDiscount: 20,
   everydayDiscount: 10,
-  distributorTiers: [1000, 3000, 5000, 10000, 30000, 50000],
-  distributorPlans: [
-    { id: "p1", name: "1안", note: "마진 우선", discounts: [45, 46, 47, 49, 51, 53] },
-    { id: "p2", name: "2안", note: "기본", discounts: [50, 51, 52, 54, 56, 58] },
-    { id: "p3", name: "3안", note: "물량 우선", discounts: [55, 56, 57, 59, 62, 65] },
+  pharmacyTiers: [
+    { id: "t1", from: 1, to: 5000, rate: 55 },
+    { id: "t2", from: 10000, rate: 52 },
+    { id: "t3", from: 30000, rate: 50 },
+    { id: "t4", from: 50000, rate: 48 },
   ],
-  selectedPlan: "p2",
   targetMargin: 20,
   channels: [
     { id: "own", name: "자사몰", fee: 0, card: 3, discount: 10, shipping: true, main: true, everyday: true },
