@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PRODUCT, type SimState } from "@/data/unit-price";
 import { NumberInput, pct, won } from "./ui";
 
@@ -45,6 +46,7 @@ export function PriceSummary({
   const cost = unitCostTotal + sgaPerUnit;
   const maxDiscount = price > 0 ? Math.max(0, 1 - cost / price) : 0;
 
+  const [open, setOpen] = useState(false);
   const plan = distributorPlans.find((p) => p.id === selectedPlan) ?? distributorPlans[0];
   const supplyAt = (d: number) => price * (1 - d / 100);
   const proposal = plan ? supplyAt(plan.discounts[0] ?? 0) : 0;
@@ -124,101 +126,119 @@ export function PriceSummary({
         </Stat>
       </div>
 
-      <div className="mt-5">
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-semibold">약국 유통사 수량별 제안 단가 (바로팜·편한가 등 매입 유통)</h3>
-          <span className="text-xs text-muted">
-            공급가 = 정가 × (1 − 할인율) · 대량 입고라 택배비 제외 · 위 제목을 눌러 미팅 제안안을 골라요
-          </span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] border-separate border-spacing-0 text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted">
-                <th className="w-32 border-b border-line px-2 py-2 font-normal">주문 수량</th>
-                {distributorPlans.map((p) => {
-                  const active = p.id === plan?.id;
-                  return (
-                    <th
-                      key={p.id}
-                      className={`border-b px-2 py-2 font-normal ${active ? "rounded-t-lg border-hero-line bg-hero" : "border-line"}`}
-                    >
-                      <button
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => setState((s) => ({ ...s, selectedPlan: p.id }))}
-                        className="flex w-full items-center gap-2 text-left"
-                      >
-                        <span
-                          className={`inline-block size-3 rounded-full border ${active ? "border-sale bg-sale" : "border-line"}`}
-                        />
-                        <span className={`text-sm ${active ? "font-semibold text-sale" : "text-foreground"}`}>
-                          {p.name}
-                        </span>
-                        <span>{p.note}</span>
-                        {active && <span className="ml-auto text-[11px] text-sale">미팅 제안안</span>}
-                      </button>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {distributorTiers.map((qty, i) => (
-                <tr key={i}>
-                  <td className="border-b border-line px-2 py-2 align-top">
-                    <NumberInput
-                      label={`${i + 1}구간 수량`}
-                      value={qty}
-                      onChange={(v) => setTier(i, Math.max(0, v))}
-                      suffix="개"
-                    />
-                    {i === 0 && <p className="mt-1 text-[11px] text-muted">최소 주문 수량</p>}
-                  </td>
-                  {distributorPlans.map((p) => {
-                    const d = p.discounts[i] ?? 0;
-                    const supply = supplyAt(d);
-                    const profit = supply - cost;
-                    const active = p.id === plan?.id;
-                    return (
-                      <td
-                        key={p.id}
-                        className={`border-b px-2 py-2 align-top ${active ? "border-hero-line bg-hero" : "border-line"}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <NumberInput
-                            label={`${p.name} ${won(qty)}개 할인율`}
-                            value={d}
-                            onChange={(v) => setDiscount(p.id, i, Math.min(100, Math.max(0, v)))}
-                            suffix="%"
-                            className="w-20 shrink-0"
-                          />
-                          <div className="text-right">
-                            <p className="font-semibold tabular-nums">{won(supply)}원</p>
-                            <p className="text-[11px] tabular-nums text-muted">VAT 별도 {won(supply / VAT)}원</p>
-                          </div>
-                        </div>
-                        <p
-                          className={`mt-1 text-right text-[11px] tabular-nums ${profit < 0 ? "text-sale" : "text-accent"}`}
+      <div className="mt-4 rounded-xl border border-hero-line">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="distributor-sim"
+          onClick={() => setOpen((o) => !o)}
+          className={`flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left ${open ? "rounded-t-xl border-b border-hero-line bg-hero" : "rounded-xl hover:bg-hero"}`}
+        >
+          <span className={`text-xs text-sale transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+          <span className="text-sm font-semibold">약국 유통</span>
+          <span className="text-xs text-muted">바로팜·편한가 등 매입 유통 · 수량별 제안 단가 1·2·3안</span>
+          {!open && plan && (
+            <span className="ml-auto text-xs tabular-nums text-muted">
+              {plan.name} · {won(distributorTiers[0] ?? 0)}개 {won(proposal)}원 →{" "}
+              {won(distributorTiers[distributorTiers.length - 1] ?? 0)}개 {won(proposalLast)}원
+            </span>
+          )}
+        </button>
+        {open && (
+          <div id="distributor-sim" className="p-3">
+            <p className="mb-2 px-1 text-xs text-muted">
+              공급가 = 정가 × (1 − 할인율) · 대량 입고라 택배비 제외 · 안 제목을 눌러 미팅 제안안을 골라요
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] border-separate border-spacing-0 text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-muted">
+                    <th className="w-32 border-b border-line px-2 py-2 font-normal">주문 수량</th>
+                    {distributorPlans.map((p) => {
+                      const active = p.id === plan?.id;
+                      return (
+                        <th
+                          key={p.id}
+                          className={`border-b px-2 py-2 font-normal ${active ? "rounded-t-lg border-hero-line bg-hero" : "border-line"}`}
                         >
-                          개당 이익 {won(profit)}원 ({pct(supply > 0 ? profit / supply : 0)})
-                        </p>
-                        <p className="text-right text-[11px] tabular-nums text-muted">
-                          주문 금액 {won(supply * qty)}원
-                        </p>
+                          <button
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setState((s) => ({ ...s, selectedPlan: p.id }))}
+                            className="flex w-full items-center gap-2 text-left"
+                          >
+                            <span
+                              className={`inline-block size-3 rounded-full border ${active ? "border-sale bg-sale" : "border-line"}`}
+                            />
+                            <span className={`text-sm ${active ? "font-semibold text-sale" : "text-foreground"}`}>
+                              {p.name}
+                            </span>
+                            <span>{p.note}</span>
+                            {active && <span className="ml-auto text-[11px] text-sale">미팅 제안안</span>}
+                          </button>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {distributorTiers.map((qty, i) => (
+                    <tr key={i}>
+                      <td className="border-b border-line px-2 py-2 align-top">
+                        <NumberInput
+                          label={`${i + 1}구간 수량`}
+                          value={qty}
+                          onChange={(v) => setTier(i, Math.max(0, v))}
+                          suffix="개"
+                        />
+                        {i === 0 && <p className="mt-1 text-[11px] text-muted">최소 주문 수량</p>}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-2 text-[11px] text-muted">
-          개당 원가 {won(unitCostTotal)}원 + 판관비 {won(sgaPerUnit)}원 = {won(cost)}원이라, 정가 대비{" "}
-          <b className="font-medium text-foreground">{pct(maxDiscount)}</b> 할인(공급가 {won(cost)}원)까지가
-          손익분기예요. 판관비는 아래 판관비 칸의 판매 수량 기준이에요.
-        </p>
+                      {distributorPlans.map((p) => {
+                        const d = p.discounts[i] ?? 0;
+                        const supply = supplyAt(d);
+                        const profit = supply - cost;
+                        const active = p.id === plan?.id;
+                        return (
+                          <td
+                            key={p.id}
+                            className={`border-b px-2 py-2 align-top ${active ? "border-hero-line bg-hero" : "border-line"}`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <NumberInput
+                                label={`${p.name} ${won(qty)}개 할인율`}
+                                value={d}
+                                onChange={(v) => setDiscount(p.id, i, Math.min(100, Math.max(0, v)))}
+                                suffix="%"
+                                className="w-20 shrink-0"
+                              />
+                              <div className="text-right">
+                                <p className="font-semibold tabular-nums">{won(supply)}원</p>
+                                <p className="text-[11px] tabular-nums text-muted">VAT 별도 {won(supply / VAT)}원</p>
+                              </div>
+                            </div>
+                            <p
+                              className={`mt-1 text-right text-[11px] tabular-nums ${profit < 0 ? "text-sale" : "text-accent"}`}
+                            >
+                              개당 이익 {won(profit)}원 ({pct(supply > 0 ? profit / supply : 0)})
+                            </p>
+                            <p className="text-right text-[11px] tabular-nums text-muted">
+                              주문 금액 {won(supply * qty)}원
+                            </p>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-2 text-[11px] text-muted">
+              개당 원가 {won(unitCostTotal)}원 + 판관비 {won(sgaPerUnit)}원 = {won(cost)}원이라, 정가 대비{" "}
+              <b className="font-medium text-foreground">{pct(maxDiscount)}</b> 할인(공급가 {won(cost)}원)까지가
+              손익분기예요. 판관비는 아래 판관비 칸의 판매 수량 기준이에요.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );
