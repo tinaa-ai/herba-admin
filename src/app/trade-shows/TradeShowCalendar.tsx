@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CALENDAR_YEAR, type FitCategory, type Region, type ShowPlan, type ShowScope, type TradeShow } from "@/data/trade-shows";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CALENDAR_YEAR, REGIONS, type FitCategory, type Region, type ShowPlan, type ShowScope, type TradeShow } from "@/data/trade-shows";
 
-const REGIONS: Region[] = ["한국", "일본", "멕시코", "미국", "아시아", "유럽"];
 const FITS: FitCategory[] = ["화장품", "바디케어", "웰니스"];
 const UNDATED = "undated";
 
@@ -76,10 +75,22 @@ function Badge({ className, children }: { className: string; children: React.Rea
 /** 이름 앞 표시: 글로벌형·지역 국제형은 강조, 현지형은 옅게 */
 function ReachBadge({ scope }: { scope: ShowScope }) {
   if (scope === "글로벌형")
-    return <Badge className="bg-reach-global font-medium text-surface">🌐 글로벌</Badge>;
+    return (
+      <span title="여러 대륙의 브랜드·바이어가 국제 거래를 하러 오는 전시">
+        <Badge className="bg-reach-global font-medium text-surface">🌐 글로벌</Badge>
+      </span>
+    );
   if (scope === "지역 국제형")
-    return <Badge className="border border-reach-global font-medium text-reach-global">권역 국제</Badge>;
-  return <Badge className="border border-line text-muted">로컬</Badge>;
+    return (
+      <span title="해외 업체도 오지만, 개최국이나 주변 권역 시장에 들어가려는 거래가 중심인 전시">
+        <Badge className="border border-reach-global font-medium text-reach-global">권역 국제</Badge>
+      </span>
+    );
+  return (
+    <span title="그 나라 약국·살롱·리테일 채널 사람들이 주로 오는 전시">
+      <Badge className="border border-line text-muted">로컬</Badge>
+    </span>
+  );
 }
 
 function ShowRow({ show }: { show: TradeShow }) {
@@ -119,7 +130,6 @@ function ShowRow({ show }: { show: TradeShow }) {
             {show.rank && (
               <Badge className="bg-best-soft font-medium text-best">추천 {show.rank}위</Badge>
             )}
-            {show.fromSheet && <Badge className="bg-subtle text-muted">엑셀 수집</Badge>}
           </div>
           <p className="mt-1 text-sm text-muted">{show.focus}</p>
           <div className="mt-2 flex flex-wrap gap-1">
@@ -210,6 +220,58 @@ export function TradeShowCalendar({ shows }: { shows: TradeShow[] }) {
   }, [filtered]);
 
   const sections = [...months, UNDATED].filter((k) => byMonth.has(k));
+  const sectionKey = sections.join(",");
+
+  const [activeMonth, setActiveMonth] = useState<string | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const clickLock = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 스크롤 위치에 따라 지금 보고 있는 달을 표시
+  useEffect(() => {
+    const els = sectionKey
+      .split(",")
+      .filter(Boolean)
+      .map((k) => document.getElementById(`m-${k}`))
+      .filter((el): el is HTMLElement => el !== null);
+    if (els.length === 0) return;
+    const onScroll = () => {
+      if (clickLock.current) return;
+      const offset = (barRef.current?.getBoundingClientRect().bottom ?? 0) + 24;
+      let current = els[0].id.slice(2);
+      for (const el of els) {
+        if (el.getBoundingClientRect().top <= offset) current = el.id.slice(2);
+      }
+      setActiveMonth(current);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [sectionKey]);
+
+  // 활성 달 버튼이 가로 스크롤 영역 밖이면 보이게
+  useEffect(() => {
+    if (!activeMonth) return;
+    // scrollIntoView는 페이지 스크롤까지 건드려 진행 중인 이동을 끊으므로 가로 스크롤만 직접 조정
+    const strip = barRef.current?.firstElementChild as HTMLElement | null;
+    const btn = strip?.querySelector<HTMLElement>(`[data-month="${activeMonth}"]`);
+    if (!strip || !btn || strip.scrollWidth <= strip.clientWidth) return;
+    const left = btn.offsetLeft - strip.offsetLeft;
+    if (left < strip.scrollLeft || left + btn.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollTo({ left: left - (strip.clientWidth - btn.offsetWidth) / 2, behavior: "smooth" });
+    }
+  }, [activeMonth]);
+
+  const goToMonth = (k: string) => {
+    const el = document.getElementById(`m-${k}`);
+    if (!el) return;
+    setActiveMonth(k);
+    if (clickLock.current) clearTimeout(clickLock.current);
+    clickLock.current = setTimeout(() => {
+      clickLock.current = null;
+    }, 800);
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    history.replaceState(null, "", `#m-${k}`);
+  };
   const filtering = regions.size > 0 || fits.size > 0 || boothOnly || globalOnly;
 
   return (
@@ -261,32 +323,43 @@ export function TradeShowCalendar({ shows }: { shows: TradeShow[] }) {
         </div>
       </div>
 
-      {/* 월별 한눈에 보기 */}
-      <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-8 lg:grid-cols-[repeat(13,minmax(0,1fr))]">
-        {[...months, UNDATED].map((k) => {
-          const list = byMonth.get(k) ?? [];
-                    return (
-            <a
-              key={k}
-              href={list.length ? `#m-${k}` : undefined}
-              aria-disabled={list.length === 0}
-              className={`rounded-lg border px-2 py-2 text-center transition-colors ${
-                list.length
-                  ? "border-hero-line bg-hero hover:border-foreground/30"
-                  : "pointer-events-none border-line bg-transparent text-muted/60"
-              }`}
-            >
-                            <div className="text-xs font-medium">{monthLabel(k, false)}</div>
-              <div className="mt-1 flex min-h-2 flex-wrap justify-center gap-0.5">
-                {list.map((s) => (
-                  <span key={s.id} title={s.name} className="text-[11px] leading-none">
-                    {s.flag}
-                  </span>
-                ))}
-              </div>
-            </a>
-          );
-        })}
+      {/* 월 이동 바: 스크롤해도 위에 붙어 있고, 누르면 그 달로 부드럽게 이동 */}
+      <div
+        ref={barRef}
+        className="sticky top-[45px] z-[5] -mx-4 border-b border-line bg-background/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+      >
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] lg:grid lg:grid-cols-[repeat(13,minmax(0,1fr))] lg:overflow-visible">
+          {[...months, UNDATED].map((k) => {
+            const list = byMonth.get(k) ?? [];
+            const active = activeMonth === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                data-month={k}
+                disabled={list.length === 0}
+                aria-current={active ? "true" : undefined}
+                onClick={() => goToMonth(k)}
+                className={`min-w-14 shrink-0 rounded-lg border px-2 py-1.5 text-center transition-colors lg:min-w-0 ${
+                  list.length === 0
+                    ? "cursor-default border-line text-muted/50"
+                    : active
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-hero-line bg-hero hover:border-foreground/40"
+                }`}
+              >
+                <div className="text-xs font-medium">{monthLabel(k, false)}</div>
+                <div className="mt-0.5 flex min-h-3 flex-wrap justify-center gap-0.5">
+                  {list.map((s) => (
+                    <span key={s.id} title={s.name} className="text-[11px] leading-none">
+                      {s.flag}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 월별 목록 */}
@@ -298,7 +371,7 @@ export function TradeShowCalendar({ shows }: { shows: TradeShow[] }) {
         sections.map((k) => {
           const list = byMonth.get(k)!;
           return (
-            <section key={k} id={`m-${k}`} className="scroll-mt-16">
+            <section key={k} id={`m-${k}`} className="scroll-mt-36">
               <h2 className="mb-2 flex items-baseline gap-2 px-1">
                 <span className="text-lg font-semibold tracking-tight">{monthLabel(k)}</span>
                 <span className="text-xs text-muted">{list.length}곳</span>

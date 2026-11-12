@@ -1,5 +1,5 @@
 // 레우비스 참가·참관 후보 박람회
-// 출처: 멕시코_전시 정보.xlsx(멕시코 전 산업 전시 18건 중 뷰티 관련만) + 박람회 조사 대화(2026-11-12 기준)
+// 출처: 박람회 조사 대화(2026-11-12 기준)
 // 일정은 2026-11-12에 각 주최사 공식 사이트에서 재확인했다. dateNote가 있는 행사는 공식 확인이 안 됐거나 출처끼리 다르다.
 
 export const SURVEY_DATE = "2026-11-12";
@@ -13,11 +13,18 @@ export type FitCategory = "화장품" | "바디케어" | "웰니스";
 /** 이 행사에서 주로 만나는 상대 */
 export type Channel = "수입·유통사" | "약국·드럭스토어" | "대형 리테일" | "살롱·스파" | "소비자";
 
+/**
+ * 글로벌형: 여러 대륙의 브랜드·바이어가 국제 거래를 하러 오는 전시 (Cosmoprof 계열 등)
+ * 지역 국제형(화면엔 '권역 국제'): 해외 출품사·바이어도 오지만, 개최국이나 주변 권역(동남아 등) 시장에 들어가려는 거래가 중심
+ * 현지 전문형·현지 중심 국제전(화면엔 '로컬'): 그 나라 약국·살롱·리테일 채널 사람들이 주로 오는 전시
+ */
 export type ShowScope = "글로벌형" | "지역 국제형" | "현지 전문형" | "현지 중심 국제전";
 
 export type ShowPlan = "부스 후보" | "참관 → 부스" | "참관" | "선택 참관";
 
-export type Region = "한국" | "일본" | "멕시코" | "미국" | "아시아" | "유럽";
+/** 필터 순서 = 레우비스 집중 순서 (멕시코 → 일본 → 동남아 → 미국), 그 뒤 기타 */
+export const REGIONS = ["멕시코", "일본", "동남아", "미국", "한국", "홍콩", "유럽"] as const;
+export type Region = (typeof REGIONS)[number];
 
 export type TradeShow = {
   id: string;
@@ -46,8 +53,6 @@ export type TradeShow = {
   pros: string;
   cons: string;
   url?: string;
-  /** 수집 엑셀(멕시코_전시 정보.xlsx)에 있던 행사 */
-  fromSheet?: boolean;
 };
 
 export const tradeShows: TradeShow[] = [
@@ -151,7 +156,7 @@ export const tradeShows: TradeShow[] = [
     focus: "싱가포르·동남아 뷰티 B2B. 호텔 스파·웰니스 운영자 상담 사례",
     flag: "🇸🇬",
     country: "싱가포르",
-    region: "아시아",
+    region: "동남아",
     city: "싱가포르",
     venue: "마리나베이샌즈",
     start: "2027-04-07",
@@ -176,8 +181,6 @@ export const tradeShows: TradeShow[] = [
     venue: "Expo Guadalajara",
     start: "2027-04-27",
     end: "2027-04-29",
-    dateNote: "엑셀에는 2027-05-01~05-31로 적혀 있음. 주최사 사이트 기준 4/27~29",
-    dateVerified: true,
     scope: "지역 국제형",
     fit: ["바디케어"],
     channels: ["대형 리테일", "수입·유통사"],
@@ -186,7 +189,6 @@ export const tradeShows: TradeShow[] = [
     pros: "전국 유통망 바이어 접점, 사전 비즈니스 매칭(Encuentros de Negocio) 운영",
     cons: "화장품 전용이 아니고 매칭은 주로 출품사 대상. 총판 미팅은 직접 확보해야 함",
     url: "https://www.expoantad.com.mx/",
-    fromSheet: true,
   },
   {
     id: "ibe-2027",
@@ -194,7 +196,7 @@ export const tradeShows: TradeShow[] = [
     focus: "스킨케어·퍼스널케어·스파·더모코스메틱·OTC 뷰티 B2B",
     flag: "🇲🇾",
     country: "말레이시아",
-    region: "아시아",
+    region: "동남아",
     city: "쿠알라룸푸르",
     venue: "KLCC",
     start: "2027-05-01",
@@ -309,7 +311,7 @@ export const tradeShows: TradeShow[] = [
     focus: "동남아 뷰티 B2B. 완제품관에 수입사·유통사·리테일·온라인몰 바이어",
     flag: "🇹🇭",
     country: "태국",
-    region: "아시아",
+    region: "동남아",
     city: "방콕",
     venue: "QSNCC",
     start: "2027-06-23",
@@ -368,7 +370,7 @@ export const tradeShows: TradeShow[] = [
     focus: "베트남 뷰티·스킨케어·스파 전시",
     flag: "🇻🇳",
     country: "베트남",
-    region: "아시아",
+    region: "동남아",
     city: "호찌민",
     venue: "SECC",
     start: "2027-07-29",
@@ -432,8 +434,6 @@ export const tradeShows: TradeShow[] = [
     venue: "Centro Banamex",
     start: "2027-10-23",
     end: "2027-10-25",
-    dateNote: "엑셀에는 2026 회차(10/24~26)만 있음. 2027 일정은 주최사 사이트 기준",
-    dateVerified: true,
     scope: "현지 중심 국제전",
     fit: ["화장품", "웰니스", "바디케어"],
     channels: ["수입·유통사", "살롱·스파"],
@@ -441,7 +441,6 @@ export const tradeShows: TradeShow[] = [
     pros: "한국 화장품 수입·도매사를 만나기 좋음. Club Elite 바이어 상담. FAC와 같은 장소·연속 일정",
     cons: "헤어·네일·바버 비중이 높아 바이어 선별 필요",
     url: "https://www.expobeautyshow.com/",
-    fromSheet: true,
   },
   {
     id: "cosmoprof-asia-2027",
@@ -449,7 +448,7 @@ export const tradeShows: TradeShow[] = [
     focus: "아시아 대표 글로벌 뷰티 B2B. 완제품·스파·살롱 구역 별도",
     flag: "🇭🇰",
     country: "홍콩",
-    region: "아시아",
+    region: "홍콩",
     city: "홍콩",
     venue: "HKCEC",
     start: "2027-11-10",
@@ -482,23 +481,4 @@ export const tradeShows: TradeShow[] = [
     cons: "초청 바이어의 국가별 구성 확인 필요",
     url: "https://www.k-beautyexpo.co.kr/",
   },
-];
-
-/** 수집 엑셀에 있었지만 레우비스와 무관해 뺀 전시 (산업분류 기준) */
-export const excludedFromSheet = [
-  "Intersolar (태양열)",
-  "Fastener Fair (패스너)",
-  "Gourmet Show (미식)",
-  "SalónChocolate (초콜릿)",
-  "Expocafe (커피, 2026·2027)",
-  "Fespa (인쇄)",
-  "Foodtech (식품)",
-  "FUNDIEXPO (주조)",
-  "Plastimagen (플라스틱)",
-  "Smart Technology (스마트제조)",
-  "FIL Guadalajara (도서)",
-  "FIL 멕시코시티 (도서)",
-  "RE+ (재생에너지)",
-  "INA PAACE (자동차부품)",
-  "EXPO PLASTICOS (플라스틱)",
 ];

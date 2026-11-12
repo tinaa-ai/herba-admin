@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CALENDAR_YEAR, excludedFromSheet, SURVEY_DATE, tradeShows } from "@/data/trade-shows";
+import { CALENDAR_YEAR, SURVEY_DATE, tradeShows } from "@/data/trade-shows";
 import { TradeShowCalendar } from "./TradeShowCalendar";
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default function TradeShowsPage() {
       <TradeShowCalendar shows={tradeShows} />
 
       <section className="mt-10 rounded-xl border border-line bg-surface px-4 py-4 text-xs leading-relaxed text-muted">
-        <p className="mb-1 font-medium text-foreground">읽는 법</p>
+        <p className="mb-1 font-medium text-foreground">확인 방법</p>
         <ul className="list-disc space-y-0.5 pl-4">
           <li>
             <b className="font-medium text-foreground">글로벌형</b>은 여러 대륙의 브랜드·바이어가 오는 국제 거래 전시,{" "}
@@ -37,10 +37,6 @@ export default function TradeShowsPage() {
           <li>
             일정은 {SURVEY_DATE}에 각 주최사 공식 사이트에서 다시 확인했어요. ⚠ 표시는 공식 확인이 안 됐거나 출처끼리
             날짜가 다른 행사예요. 펼치면 이유가 나와요.
-          </li>
-          <li>
-            멕시코_전시 정보.xlsx의 18건 중 뷰티 관련인 Expo ANTAD와 EBS만 넣었어요. 뺀 전시:{" "}
-            {excludedFromSheet.join(", ")}.
           </li>
         </ul>
       </section>
