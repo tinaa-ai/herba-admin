@@ -95,9 +95,9 @@ export const DEFAULT_STATE: SimState = {
   ],
   lossRate: 3,
   fixedCosts: [
-    { id: "rnd", label: "연구개발비 (임상·개발·품질검사)", amount: 11000000 },
+    { id: "rnd", label: "연구개발비", amount: 11000000, note: "임상·개발·품질검사" },
     { id: "storage", label: "창고 보관료", amount: 110000 },
-    { id: "3pl", label: "3PL 물류비 (택배·보관·충전재)", amount: 33000000, note: "개당 3,000원 × 1만 개 + VAT" },
+    { id: "3pl", label: "3PL 물류비", amount: 33000000, note: "택배·보관·충전재 · 개당 3,000원 × 1만 개 + VAT" },
     { id: "cs", label: "CS", amount: 2200000 },
     { id: "ads", label: "광고 판촉비 (마케팅)", amount: 5500000 },
     { id: "service", label: "지급 수수료", amount: 550000 },

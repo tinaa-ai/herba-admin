@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_STATE, PRODUCT, QUOTE, type Channel, type CostItem, type SimState } from "@/data/unit-price";
 import { ExportPanel, exportSummary, makeExportCalc } from "./ExportPanel";
 import { PriceSummary } from "./PriceSummary";
@@ -65,6 +65,12 @@ function loadState(): SimState | null {
       merged.fixedCosts = [...merged.fixedCosts.slice(0, at), { ...def, amount }, ...merged.fixedCosts.slice(at)];
     }
     delete legacy.shippingCost;
+    // 긴 이름은 잘려서 짧게 바꾸고 설명은 아래 줄(note)로 옮겼어요
+    merged.fixedCosts = merged.fixedCosts.map((c) => {
+      const def = DEFAULT_STATE.fixedCosts.find((d) => d.id === c.id);
+      const old = c.label === "연구개발비 (임상·개발·품질검사)" || c.label === "3PL 물류비 (택배·보관·충전재)";
+      return old && def ? { ...c, label: def.label, note: def.note } : c;
+    });
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {
@@ -110,6 +116,36 @@ function Card({
   );
 }
 
+/** 항목 이름 입력칸: 길면 잘리지 않고 다음 줄로 넘어가요 */
+function LabelInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      aria-label="항목 이름"
+      onChange={(e) => onChange(e.target.value.replace(/\n/g, ""))}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.preventDefault();
+      }}
+      className="min-w-0 flex-1 resize-none overflow-hidden rounded px-1 py-1 text-sm leading-snug outline-none hover:bg-subtle focus:bg-subtle"
+    />
+  );
+}
+
 function CostList({
   items,
   onChange,
@@ -126,12 +162,7 @@ function CostList({
       {items.map((it) => (
         <div key={it.id} className="group">
           <div className="flex items-center gap-2">
-            <input
-              value={it.label}
-              aria-label="항목 이름"
-              onChange={(e) => update(it.id, { label: e.target.value })}
-              className="min-w-0 flex-1 rounded px-1 py-1 text-sm outline-none hover:bg-subtle focus:bg-subtle"
-            />
+            <LabelInput value={it.label} onChange={(label) => update(it.id, { label })} />
             <NumberInput
               label={`${it.label} 금액`}
               value={it.amount}
