@@ -72,11 +72,9 @@ export type SimState = {
   quantity: number;
   /** 정가 (VAT 포함). 보여주는 숫자이고, 약국 공급률·수출 정가 대비의 기준 */
   price: number;
-  /** 판매가 (VAT 포함). 보수적으로 잡은 실제 판매 가격 — 채널별 이익 계산의 기준 */
-  sellingPrice: number;
   /** 최저가 하한선: 정가 대비 최대 할인율 %. 실판매가가 이 할인가보다 낮으면 경고 */
   floorDiscount: number;
-  /** 상시 할인율 % (자사몰·브랜드스토어 기본 판매가) */
+  /** 상시 할인율 %. 정가 × (1 − 상시 할인율) = 실제 판매 금액(판매가), 채널별 이익 계산의 기준 */
   everydayDiscount: number;
   /** 약국 유통사(바로팜·편한가 등 매입 유통) 수량 구간별 공급률 */
   pharmacyTiers: PharmacyTier[];
@@ -108,7 +106,6 @@ export const DEFAULT_STATE: SimState = {
   ],
   quantity: 10000,
   price: 25000,
-  sellingPrice: 20000,
   floorDiscount: 20,
   everydayDiscount: 10,
   pharmacyTiers: [

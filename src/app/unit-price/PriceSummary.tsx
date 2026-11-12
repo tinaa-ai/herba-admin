@@ -5,10 +5,23 @@ import { Fold, NumberInput, SortableStack, pct, won } from "./ui";
 
 const VAT = 1.1;
 
-function Stat({ label, value, children }: { label: string; value: string; children?: React.ReactNode }) {
+function Stat({
+  label,
+  tag,
+  value,
+  children,
+}: {
+  label: string;
+  tag?: string;
+  value: string;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="rounded-xl border-2 border-muted/60 bg-surface px-4 py-3">
-      <p className="text-xs text-muted">{label}</p>
+      <p className="text-xs text-muted">
+        {label}
+        {tag && <b className="ml-1.5 font-semibold text-sale">· {tag}</b>}
+      </p>
       <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
       <div className="mt-1 space-y-1.5 text-[11px] text-muted">{children}</div>
     </div>
@@ -99,7 +112,7 @@ export function PriceSummary({
           </p>
         </Stat>
 
-        <Stat label="상시 할인가" value={`${won(everydayPrice)}원`}>
+        <Stat label="상시 할인가" tag="실제 판매 금액" value={`${won(everydayPrice)}원`}>
           <NumberInput
             label="상시 할인율"
             value={everydayDiscount}
@@ -107,7 +120,8 @@ export function PriceSummary({
             suffix="%"
           />
           <p>
-            정가에서 <b className="font-medium text-foreground">{won(price - everydayPrice)}원</b> 할인한 평소 판매가
+            정가에서 <b className="font-medium text-foreground">{won(price - everydayPrice)}원</b> 할인 · 판매가 계산
+            디테일과 채널별 개당 이익이 이 금액 기준이에요
           </p>
         </Stat>
 

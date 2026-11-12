@@ -45,6 +45,8 @@ function loadState(): SimState | null {
       merged.exportSim = { ...merged.exportSim, fxRate: DEFAULT_STATE.exportSim.fxRate };
     // 채널 이익은 이제 판매가(기본 20,000원) 기준이라, 예전 정가 대비 상시 할인 10%가 그대로면 0%로 되돌려요
     merged.channels = merged.channels.map((c) => (c.everyday && c.discount === 10 ? { ...c, discount: 0 } : c));
+    // 판매가는 이제 정가 × (1 − 상시 할인율)로 계산해요. 따로 저장하던 sellingPrice는 버려요
+    delete (merged as Record<string, unknown>).sellingPrice;
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {
@@ -239,8 +241,21 @@ export function UnitPriceSimulator() {
       state.channels.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     );
 
-  const { unitCosts, shippingCost, fixedCosts, quantity, price, sellingPrice, floorDiscount, targetMargin, channels } =
-    state;
+  const {
+    unitCosts,
+    shippingCost,
+    fixedCosts,
+    quantity,
+    price,
+    everydayDiscount,
+    floorDiscount,
+    targetMargin,
+    channels,
+  } = state;
+  // 판매가 = 상시 할인가. 판매가를 직접 고치면 상시 할인율이 거꾸로 계산돼요
+  const sellingPrice = price * (1 - everydayDiscount / 100);
+  const setSellingPrice = (v: number) =>
+    set("everydayDiscount", price > 0 ? Math.min(100, Math.max(0, (1 - v / price) * 100)) : 0);
   const floorPrice = price * (1 - floorDiscount / 100);
 
   const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
@@ -377,18 +392,18 @@ export function UnitPriceSimulator() {
                       <p className="mb-1 text-sm">판매가 (VAT 포함)</p>
                       <NumberInput
                         label="판매가"
-                        value={sellingPrice}
-                        onChange={(v) => set("sellingPrice", Math.max(0, v))}
+                        value={Math.round(sellingPrice)}
+                        onChange={(v) => setSellingPrice(Math.max(0, v))}
                         suffix="원"
                         className="[&_input]:py-2 [&_input]:text-lg [&_input]:font-semibold"
                       />
                       <p className="mt-1 text-[11px] text-muted">
-                        보수적으로 잡은 실제 판매 가격이에요. 채널별 개당 이익은 이 금액으로 계산해요 · 10mL당{" "}
-                        {won((sellingPrice / PRODUCT.volumeMl) * 10)}원
+                        = 한눈에 보기의 상시 할인가(실제 판매 금액). 정가 {won(price)}원에서 상시 할인{" "}
+                        {Math.round(everydayDiscount * 10) / 10}%를 뺀 금액이고, 여기서 바꾸면 상시 할인율도 같이
+                        바뀌어요
                       </p>
                       <p className="mt-1 text-[11px] text-muted">
-                        정가 {won(price)}원은 보여주는 숫자예요 (정가 대비{" "}
-                        {price > 0 ? Math.round((1 - sellingPrice / price) * 1000) / 10 : 0}% 낮음)
+                        채널별 개당 이익은 이 금액으로 계산해요 · 10mL당 {won((sellingPrice / PRODUCT.volumeMl) * 10)}원
                       </p>
                     </div>
                     <div>
