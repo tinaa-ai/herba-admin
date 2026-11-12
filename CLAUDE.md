@@ -24,7 +24,7 @@ The dev server does not pick up edits to `src/app/globals.css` (color tokens sta
 ## Architecture
 
 - **Auth gate**: `src/proxy.ts` (Next 16's name for middleware) runs on every request and redirects to `/login` unless the `herba_session` cookie matches an HMAC derived from `ADMIN_PASSWORD` (`src/lib/auth.ts`). Login/logout are server actions in `src/app/login/actions.ts`. Changing the password logs everyone out. Anything that must load before login (icons, `/products/*` images) has to be excluded in the proxy `matcher`.
-- **Pages** set only a short `metadata.title`; the root layout's template turns it into `HERBA | <title>`. Add new top-level pages to the `tabs` array in `src/components/TabNav.tsx`. `/` redirects to `/competitors` via `next.config.ts` (a `redirect()` inside a page errors under cache components).
+- **Pages** set only a short `metadata.title`; the root layout's template turns it into `HERBA | <title>`. Add new top-level pages to the `tabs` array in `src/components/TabNav.tsx`; an entry with `items` is a group tab that opens a dropdown (the "가격 분석" group holds `/unit-price` then `/competitors`). `/` redirects to `/unit-price` via `next.config.ts` (a `redirect()` inside a page errors under cache components).
 - **Under `cacheComponents`**, reading `searchParams`/`cookies` in a server page outside `<Suspense>` errors at prerender. The login page reads `next` client-side with `useSearchParams` inside `<Suspense>` for this reason.
 - **Styling**: colors are CSS variables in `globals.css` (light + `prefers-color-scheme: dark`) exposed as Tailwind colors via `@theme inline` (`bg-surface`, `text-muted`, `bg-hero`, `text-sale`, …). Add new colors there in both modes rather than hard-coding hex values.
 
