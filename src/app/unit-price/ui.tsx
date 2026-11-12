@@ -44,3 +44,41 @@ export function NumberInput({
     </label>
   );
 }
+
+/** 제목 줄을 누르면 펼쳐지는 패널. 처음에는 접혀 있고, 접혔을 때는 summary를 한 줄로 보여줘요 */
+export function Fold({
+  id,
+  title,
+  subtitle,
+  summary,
+  children,
+}: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  summary?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-xl border border-hero-line">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((o) => !o)}
+        className={`flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left ${open ? "rounded-t-xl border-b border-hero-line bg-hero" : "rounded-xl hover:bg-hero"}`}
+      >
+        <span className={`text-xs text-sale transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+        <span className="text-sm font-semibold">{title}</span>
+        {subtitle && <span className="text-xs text-muted">{subtitle}</span>}
+        {!open && summary && <span className="ml-auto text-xs tabular-nums text-muted">{summary}</span>}
+      </button>
+      {open && (
+        <div id={id} className="p-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}

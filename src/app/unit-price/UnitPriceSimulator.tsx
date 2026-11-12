@@ -251,147 +251,163 @@ export function UnitPriceSimulator() {
 
   return (
     <div className="space-y-6">
-      <PriceSummary state={state} setState={setState} unitCostTotal={unitCostTotal} sgaPerUnit={sgaPerUnit} />
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tile
-          label="제조 공급가 (견적)"
-          value={`${won(supply)}원`}
-          sub={`원료비 + 제조 노무비 + 부자재 · 견적 ${won(QUOTE.supply)}원 + VAT`}
-        />
-        <Tile
-          label="개당 원가"
-          value={`${won(unitCostTotal)}원`}
-          sub={`개별 배송 채널은 +${won(shippingCost)}원 = ${won(unitCostTotal + shippingCost)}원`}
-        />
-        <Tile label="개당 판관비" value={`${won(sgaPerUnit)}원`} sub={`${won(fixedTotal)}원 ÷ ${won(quantity)}개`} />
-        <Tile
-          label="개당 총원가"
-          value={`${won(unitCostTotal + sgaPerUnit)}원`}
-          sub={`개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원 · 채널 수수료 제외`}
-        />
-      </div>
-
-      <div className="rounded-2xl border border-line bg-surface p-3">
-        <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 정가와 할인 하한선을 정해요</p>
-        <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
-          <Card title="개당 원가" aside="VAT 포함" tone="cost">
-            <CostList items={unitCosts} onChange={(v) => set("unitCosts", v)} addLabel="원가 항목 추가" />
-            <div className="mt-3 border-t border-line pt-3">
-              <div className="flex items-center gap-2">
-                <span className="flex-1 px-1 text-sm">3PL 물류비 (택배박스, 충전재)</span>
-                <NumberInput
-                  label="3PL 물류비"
-                  value={shippingCost}
-                  onChange={(v) => set("shippingCost", v)}
-                  suffix="원"
-                  className="w-32 shrink-0"
-                />
-                <span className="w-5 shrink-0" />
-              </div>
-              <p className="pl-1 text-[11px] text-muted">
-                아래 채널 표에서 &lsquo;개별 배송&rsquo;에 체크한 채널에만 들어가요
-              </p>
+      <PriceSummary
+        state={state}
+        setState={setState}
+        unitCostTotal={unitCostTotal}
+        sgaPerUnit={sgaPerUnit}
+        detailSummary={`개당 총원가 ${won(unitCostTotal + sgaPerUnit)}원 · 개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원`}
+        detail={
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <Tile
+                label="제조 공급가 (견적)"
+                value={`${won(supply)}원`}
+                sub={`원료비 + 제조 노무비 + 부자재 · 견적 ${won(QUOTE.supply)}원 + VAT`}
+              />
+              <Tile
+                label="개당 원가"
+                value={`${won(unitCostTotal)}원`}
+                sub={`개별 배송 채널은 +${won(shippingCost)}원 = ${won(unitCostTotal + shippingCost)}원`}
+              />
+              <Tile
+                label="개당 판관비"
+                value={`${won(sgaPerUnit)}원`}
+                sub={`${won(fixedTotal)}원 ÷ ${won(quantity)}개`}
+              />
+              <Tile
+                label="개당 총원가"
+                value={`${won(unitCostTotal + sgaPerUnit)}원`}
+                sub={`개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원 · 채널 수수료 제외`}
+              />
             </div>
-            <div className="mt-3 space-y-1 border-t border-line pt-3">
-              <Row label="원가 소계" value={`${won(unitCostTotal)}원`} />
-              <Row label="개별 배송 포함" value={`${won(unitCostTotal + shippingCost)}원`} strong />
+
+            <div className="rounded-2xl border border-line bg-surface p-3">
+              <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 정가와 할인 하한선을 정해요</p>
+              <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
+                <Card title="개당 원가" aside="VAT 포함" tone="cost">
+                  <CostList items={unitCosts} onChange={(v) => set("unitCosts", v)} addLabel="원가 항목 추가" />
+                  <div className="mt-3 border-t border-line pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 px-1 text-sm">3PL 물류비 (택배박스, 충전재)</span>
+                      <NumberInput
+                        label="3PL 물류비"
+                        value={shippingCost}
+                        onChange={(v) => set("shippingCost", v)}
+                        suffix="원"
+                        className="w-32 shrink-0"
+                      />
+                      <span className="w-5 shrink-0" />
+                    </div>
+                    <p className="pl-1 text-[11px] text-muted">
+                      아래 채널 표에서 &lsquo;개별 배송&rsquo;에 체크한 채널에만 들어가요
+                    </p>
+                  </div>
+                  <div className="mt-3 space-y-1 border-t border-line pt-3">
+                    <Row label="원가 소계" value={`${won(unitCostTotal)}원`} />
+                    <Row label="개별 배송 포함" value={`${won(unitCostTotal + shippingCost)}원`} strong />
+                  </div>
+                </Card>
+
+                <Connector>+</Connector>
+
+                <Card title="판관비" aside="VAT 포함 · 판매 수량 전체 기간 합계" tone="cost">
+                  <CostList items={fixedCosts} onChange={(v) => set("fixedCosts", v)} addLabel="판관비 항목 추가" />
+                  <div className="mt-3 space-y-1 border-t border-line pt-3">
+                    <Row label="판관비 합계" value={`${won(fixedTotal)}원`} />
+                    <div className="flex items-center justify-between gap-2 py-1 text-sm">
+                      <span className="text-muted">판매 수량 (배분 기준)</span>
+                      <NumberInput
+                        label="판매 수량"
+                        value={quantity}
+                        onChange={(v) => set("quantity", Math.max(0, v))}
+                        suffix="개"
+                        className="w-32"
+                      />
+                    </div>
+                    <Row label="개당 판관비" value={`${won(sgaPerUnit)}원`} strong />
+                    {belowMoq && (
+                      <p className="rounded bg-warn-soft px-2 py-1 text-[11px] text-warn">
+                        용기 MOQ가 {QUOTE.containerMoq.toLocaleString("ko-KR")}개라 이보다 적게 팔면 남는 용기 비용이
+                        생길 수 있어요
+                      </p>
+                    )}
+                  </div>
+                </Card>
+
+                <Connector>→</Connector>
+
+                <Card title="가격 설정" tone="price">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="mb-1 text-sm">정가 (VAT 포함)</p>
+                      <NumberInput
+                        label="정가"
+                        value={price}
+                        onChange={(v) => set("price", Math.max(0, v))}
+                        suffix="원"
+                        className="[&_input]:py-2 [&_input]:text-lg [&_input]:font-semibold"
+                      />
+                      <p className="mt-1 text-[11px] text-muted">
+                        10mL당 {won((price / PRODUCT.volumeMl) * 10)}원 · 채널별 실판매가는 표에서 할인율로 정해요
+                      </p>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-sm">최저가 하한선</p>
+                      <NumberInput
+                        label="최저가 하한선 할인율"
+                        value={floorDiscount}
+                        onChange={(v) => set("floorDiscount", Math.min(100, Math.max(0, v)))}
+                        suffix="%"
+                      />
+                      <p className="mt-1 text-[11px] text-muted">
+                        정가 대비 최대 할인율 → {won(floorPrice)}원. 실판매가가 이보다 낮은 채널은 표에서 빨간색으로
+                        표시해요
+                      </p>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-sm">목표 이익률</p>
+                      <NumberInput
+                        label="목표 이익률"
+                        value={targetMargin}
+                        onChange={(v) => set("targetMargin", Math.min(99, Math.max(0, v)))}
+                        suffix="%"
+                      />
+                      <p className="mt-1 text-[11px] text-muted">
+                        실판매가 대비. 채널 표의 &lsquo;목표가&rsquo; 계산에 써요
+                      </p>
+                    </div>
+                    <div className="border-t border-line pt-3 text-[11px] leading-relaxed text-muted">
+                      <p className="mb-1.5 font-medium text-foreground">판매가 구성</p>
+                      <ul className="flex flex-wrap gap-x-3 gap-y-1">
+                        {SEGMENTS.map((s) => (
+                          <li key={s.key} className="flex items-center gap-1">
+                            <span className={`inline-block size-2.5 rounded-sm ${s.className}`} />
+                            {s.label}
+                          </li>
+                        ))}
+                        <li className="flex items-center gap-1">
+                          <span className="inline-block size-2.5 rounded-sm bg-accent" />
+                          이익
+                        </li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm("고친 값을 모두 지우고 기본값으로 되돌릴까요?")) setState(DEFAULT_STATE);
+                      }}
+                      className="text-xs text-muted underline-offset-2 hover:text-foreground hover:underline"
+                    >
+                      기본값으로 되돌리기
+                    </button>
+                  </div>
+                </Card>
+              </div>
             </div>
-          </Card>
-
-          <Connector>+</Connector>
-
-          <Card title="판관비" aside="VAT 포함 · 판매 수량 전체 기간 합계" tone="cost">
-            <CostList items={fixedCosts} onChange={(v) => set("fixedCosts", v)} addLabel="판관비 항목 추가" />
-            <div className="mt-3 space-y-1 border-t border-line pt-3">
-              <Row label="판관비 합계" value={`${won(fixedTotal)}원`} />
-              <div className="flex items-center justify-between gap-2 py-1 text-sm">
-                <span className="text-muted">판매 수량 (배분 기준)</span>
-                <NumberInput
-                  label="판매 수량"
-                  value={quantity}
-                  onChange={(v) => set("quantity", Math.max(0, v))}
-                  suffix="개"
-                  className="w-32"
-                />
-              </div>
-              <Row label="개당 판관비" value={`${won(sgaPerUnit)}원`} strong />
-              {belowMoq && (
-                <p className="rounded bg-warn-soft px-2 py-1 text-[11px] text-warn">
-                  용기 MOQ가 {QUOTE.containerMoq.toLocaleString("ko-KR")}개라 이보다 적게 팔면 남는 용기 비용이 생길 수
-                  있어요
-                </p>
-              )}
-            </div>
-          </Card>
-
-          <Connector>→</Connector>
-
-          <Card title="가격 설정" tone="price">
-            <div className="space-y-3">
-              <div>
-                <p className="mb-1 text-sm">정가 (VAT 포함)</p>
-                <NumberInput
-                  label="정가"
-                  value={price}
-                  onChange={(v) => set("price", Math.max(0, v))}
-                  suffix="원"
-                  className="[&_input]:py-2 [&_input]:text-lg [&_input]:font-semibold"
-                />
-                <p className="mt-1 text-[11px] text-muted">
-                  10mL당 {won((price / PRODUCT.volumeMl) * 10)}원 · 채널별 실판매가는 표에서 할인율로 정해요
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-sm">최저가 하한선</p>
-                <NumberInput
-                  label="최저가 하한선 할인율"
-                  value={floorDiscount}
-                  onChange={(v) => set("floorDiscount", Math.min(100, Math.max(0, v)))}
-                  suffix="%"
-                />
-                <p className="mt-1 text-[11px] text-muted">
-                  정가 대비 최대 할인율 → {won(floorPrice)}원. 실판매가가 이보다 낮은 채널은 표에서 빨간색으로 표시해요
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-sm">목표 이익률</p>
-                <NumberInput
-                  label="목표 이익률"
-                  value={targetMargin}
-                  onChange={(v) => set("targetMargin", Math.min(99, Math.max(0, v)))}
-                  suffix="%"
-                />
-                <p className="mt-1 text-[11px] text-muted">실판매가 대비. 채널 표의 &lsquo;목표가&rsquo; 계산에 써요</p>
-              </div>
-              <div className="border-t border-line pt-3 text-[11px] leading-relaxed text-muted">
-                <p className="mb-1.5 font-medium text-foreground">판매가 구성</p>
-                <ul className="flex flex-wrap gap-x-3 gap-y-1">
-                  {SEGMENTS.map((s) => (
-                    <li key={s.key} className="flex items-center gap-1">
-                      <span className={`inline-block size-2.5 rounded-sm ${s.className}`} />
-                      {s.label}
-                    </li>
-                  ))}
-                  <li className="flex items-center gap-1">
-                    <span className="inline-block size-2.5 rounded-sm bg-accent" />
-                    이익
-                  </li>
-                </ul>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm("고친 값을 모두 지우고 기본값으로 되돌릴까요?")) setState(DEFAULT_STATE);
-                }}
-                className="text-xs text-muted underline-offset-2 hover:text-foreground hover:underline"
-              >
-                기본값으로 되돌리기
-              </button>
-            </div>
-          </Card>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <section className="rounded-xl border border-line bg-surface">
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 pt-4">

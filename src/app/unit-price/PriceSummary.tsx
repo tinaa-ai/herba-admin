@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { PRODUCT, type SimState } from "@/data/unit-price";
-import { NumberInput, pct, won } from "./ui";
+import { Fold, NumberInput, pct, won } from "./ui";
 
 const VAT = 1.1;
 
@@ -32,11 +31,16 @@ export function PriceSummary({
   setState,
   unitCostTotal,
   sgaPerUnit,
+  detail,
+  detailSummary,
 }: {
   state: SimState;
   setState: React.Dispatch<React.SetStateAction<SimState>>;
   unitCostTotal: number;
   sgaPerUnit: number;
+  /** 펼치면 보이는 정가 계산 디테일 (원가·판관비·가격 설정) */
+  detail: React.ReactNode;
+  detailSummary: React.ReactNode;
 }) {
   const { price, everydayDiscount, floorDiscount, distributorTiers, distributorPlans, selectedPlan } = state;
   const everydayPrice = price * (1 - everydayDiscount / 100);
@@ -46,7 +50,6 @@ export function PriceSummary({
   const cost = unitCostTotal + sgaPerUnit;
   const maxDiscount = price > 0 ? Math.max(0, 1 - cost / price) : 0;
 
-  const [open, setOpen] = useState(false);
   const plan = distributorPlans.find((p) => p.id === selectedPlan) ?? distributorPlans[0];
   const supplyAt = (d: number) => price * (1 - d / 100);
   const proposal = plan ? supplyAt(plan.discounts[0] ?? 0) : 0;
@@ -129,26 +132,29 @@ export function PriceSummary({
         </Stat>
       </div>
 
-      <div className="mt-4 rounded-xl border border-hero-line">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls="distributor-sim"
-          onClick={() => setOpen((o) => !o)}
-          className={`flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left ${open ? "rounded-t-xl border-b border-hero-line bg-hero" : "rounded-xl hover:bg-hero"}`}
+      <div className="mt-4 space-y-3">
+        <Fold
+          id="price-detail"
+          title="정가 계산 디테일"
+          subtitle="개당 원가 + 판관비 → 정가·하한선·목표 이익률"
+          summary={detailSummary}
         >
-          <span className={`text-xs text-sale transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
-          <span className="text-sm font-semibold">약국 유통</span>
-          <span className="text-xs text-muted">바로팜·편한가 등 매입 유통 · 수량별 제안 단가 1·2·3안</span>
-          {!open && plan && (
-            <span className="ml-auto text-xs tabular-nums text-muted">
-              {plan.name} · {won(distributorTiers[0] ?? 0)}개 {won(proposal)}원 →{" "}
-              {won(distributorTiers[distributorTiers.length - 1] ?? 0)}개 {won(proposalLast)}원
-            </span>
-          )}
-        </button>
-        {open && (
-          <div id="distributor-sim" className="p-3">
+          {detail}
+        </Fold>
+        <Fold
+          id="distributor-sim"
+          title="약국 유통"
+          subtitle="바로팜·편한가 등 매입 유통 · 수량별 제안 단가 1·2·3안"
+          summary={
+            plan && (
+              <>
+                {plan.name} · {won(distributorTiers[0] ?? 0)}개 {won(proposal)}원 →{" "}
+                {won(distributorTiers[distributorTiers.length - 1] ?? 0)}개 {won(proposalLast)}원
+              </>
+            )
+          }
+        >
+          <div>
             <p className="mb-2 px-1 text-xs text-muted">
               공급가 = 정가 × (1 − 할인율) · 대량 입고라 택배비 제외 · 안 제목을 눌러 미팅 제안안을 골라요
             </p>
@@ -241,7 +247,7 @@ export function PriceSummary({
               손익분기예요. 판관비는 아래 판관비 칸의 판매 수량 기준이에요.
             </p>
           </div>
-        )}
+        </Fold>
       </div>
     </section>
   );
