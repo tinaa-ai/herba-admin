@@ -5,6 +5,8 @@ import { NumberInput, pct, won } from "./ui";
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const ceilCent = (n: number) => Math.ceil(n * 100) / 100;
+const mxn = (n: number) => `MX$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const jpy = (n: number) => `¥${Math.round(n).toLocaleString("ja-JP")}`;
 const tierLabel = (t: ExportTier) => (t.to !== undefined ? `${won(t.from)}~${won(t.to)}개` : `${won(t.from)}개 이상`);
 
 const Key = ({ children }: { children: React.ReactNode }) => <b className="font-semibold text-export">{children}</b>;
@@ -103,7 +105,7 @@ export function ExportPanel({
         USD, 센트 단위로 올림
       </p>
 
-      <div className="mb-4 grid gap-3 lg:grid-cols-3">
+      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border border-export-line bg-export-soft p-3">
           <p className="mb-2 text-sm font-semibold text-export">기본 설정</p>
           <div className="space-y-1.5 text-sm">
@@ -156,16 +158,72 @@ export function ExportPanel({
           <ItemInputs items={sim.unitExtras} onChange={(v) => onChange((s) => ({ ...s, unitExtras: v }))} suffix="원" />
           <p className="mt-2 text-[11px] text-muted">개당 {won(extras)}원</p>
         </div>
+        <div className="rounded-lg border border-export-line bg-export-soft p-3">
+          <p className="mb-2 text-sm font-semibold text-export">환율 계산</p>
+          <div className="space-y-1.5 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="flex-1">멕시코 페소</span>
+              <NumberInput
+                label="1달러당 멕시코 페소"
+                required
+                value={sim.mxnRate}
+                onChange={(v) => onChange((s) => ({ ...s, mxnRate: Math.max(0, v) }))}
+                suffix="MXN/$"
+                className="w-32"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex-1">일본 엔</span>
+              <NumberInput
+                label="1달러당 일본 엔"
+                required
+                value={sim.jpyRate}
+                onChange={(v) => onChange((s) => ({ ...s, jpyRate: Math.max(0, v) }))}
+                suffix="¥/$"
+                className="w-32"
+              />
+            </div>
+            <div className="mt-2 border-t border-export-line pt-2">
+              <div className="flex items-center gap-2">
+                <span className="flex-1">계산할 금액</span>
+                <NumberInput
+                  label="계산할 달러 금액"
+                  value={sim.calcUsd}
+                  onChange={(v) => onChange((s) => ({ ...s, calcUsd: Math.max(0, v) }))}
+                  suffix="$"
+                  className="w-32"
+                />
+              </div>
+              <ul className="mt-1.5 space-y-0.5 text-right text-xs tabular-nums">
+                <li>
+                  <span className="text-muted">원화 </span>
+                  <b className="font-semibold">{won(sim.calcUsd * sim.fxRate)}원</b>
+                </li>
+                <li>
+                  <span className="text-muted">멕시코 페소 </span>
+                  <b className="font-semibold">{mxn(sim.calcUsd * sim.mxnRate)}</b>
+                </li>
+                <li>
+                  <span className="text-muted">일본 엔 </span>
+                  <b className="font-semibold">{jpy(sim.calcUsd * sim.jpyRate)}</b>
+                </li>
+              </ul>
+            </div>
+            <p className="text-[11px] text-muted">페소 11-11, 엔 11-12 시세 기준 · 미팅 전에 다시 확인해 주세요</p>
+          </div>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1000px] text-sm">
+        <table className="w-full min-w-[1200px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-muted">
               <th className="px-2 py-2 font-normal">주문 수량</th>
               <th className="w-24 px-2 py-2 text-right font-normal">목표 마진</th>
               <th className="px-2 py-2 text-right font-normal">FOB 단가 (USD)</th>
               <th className="px-2 py-2 text-right font-normal">원화 환산</th>
+              <th className="px-2 py-2 text-right font-normal">멕시코 페소</th>
+              <th className="px-2 py-2 text-right font-normal">일본 엔</th>
               <th className="px-2 py-2 text-right font-normal">국내 정가 대비</th>
               <th className="px-2 py-2 text-right font-normal">개당 원가 합계</th>
               <th className="px-2 py-2 text-right font-normal">헤르바 개당 남는 금액</th>
@@ -219,6 +277,12 @@ export function ExportPanel({
                     {r.fobKrw === null ? "—" : `${won(r.fobKrw)}원`}
                   </td>
                   <td className="px-2 py-2 text-right tabular-nums text-muted">
+                    {r.fobUsd === null ? "—" : mxn(r.fobUsd * sim.mxnRate)}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums text-muted">
+                    {r.fobUsd === null ? "—" : jpy(r.fobUsd * sim.jpyRate)}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums text-muted">
                     {r.ofList === null ? "—" : pct(r.ofList)}
                   </td>
                   <td className="px-2 py-2 text-right tabular-nums text-muted">
@@ -244,7 +308,12 @@ export function ExportPanel({
                       {r.profit === null ? "—" : `${won(r.profit * r.qty)}원`}
                     </p>
                     {r.fobUsd !== null && (
-                      <p className="text-[11px] tabular-nums text-muted">주문 금액 {usd(r.fobUsd * r.qty)}</p>
+                      <p className="text-[11px] tabular-nums text-muted">
+                        주문 금액 {usd(r.fobUsd * r.qty)}
+                        <span className="block">
+                          {mxn(r.fobUsd * r.qty * sim.mxnRate)} · {jpy(r.fobUsd * r.qty * sim.jpyRate)}
+                        </span>
+                      </p>
                     )}
                     {!r.inRange && <p className="text-[11px] text-warn">이 수량은 {tierLabel(t)} 구간 밖이에요</p>}
                   </td>
