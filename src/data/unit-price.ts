@@ -29,6 +29,8 @@ export type Channel = {
   card: number;
   /** 고객에게 브랜드가 직접 택배를 보내는 채널이면 3PL 물류비를 원가에 넣음 */
   shipping: boolean;
+  /** 주력 채널: 표 맨 위에 따로 묶어 보여줌 */
+  main?: boolean;
 };
 
 export type SimState = {
@@ -64,8 +66,9 @@ export const DEFAULT_STATE: SimState = {
   price: 24900,
   targetMargin: 20,
   channels: [
-    { id: "own", name: "자사몰", fee: 0, card: 3, shipping: true },
-    { id: "naver", name: "네이버 스마트스토어", fee: 7, card: 0, shipping: true },
+    { id: "own", name: "자사몰", fee: 0, card: 3, shipping: true, main: true },
+    { id: "naver", name: "네이버 브랜드스토어", fee: 7, card: 0, shipping: true, main: true },
+    { id: "pharmacy", name: "약국", fee: 40, card: 0, shipping: false, main: true },
     { id: "oliveyoung", name: "올리브영", fee: 60, card: 0, shipping: false },
     { id: "musinsa", name: "무신사", fee: 30, card: 0, shipping: true },
     { id: "kakao-store", name: "카카오톡 톡스토어", fee: 3.3, card: 0, shipping: true },
@@ -75,6 +78,5 @@ export const DEFAULT_STATE: SimState = {
     { id: "influencer", name: "인플루언서 공구", fee: 35, card: 0, shipping: true },
     { id: "coupang", name: "쿠팡 마켓플레이스", fee: 9.6, card: 0, shipping: true },
     { id: "gym", name: "헬스장·골프장", fee: 40, card: 0, shipping: false },
-    { id: "pharmacy", name: "약국", fee: 40, card: 0, shipping: false },
   ],
 };
