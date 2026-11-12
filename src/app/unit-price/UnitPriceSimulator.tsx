@@ -185,7 +185,9 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 function Tile({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
   return (
     <div className={`rounded-xl border px-4 py-3 ${highlight ? "border-hero-line bg-hero" : "border-line bg-surface"}`}>
-      <p className={`text-xs ${highlight ? "font-medium text-sale" : "text-muted"}`}>{label}</p>
+      <p className={`text-xs ${highlight ? "font-medium text-sale" : "text-muted"}`}>
+        {label} <span className="text-[10px] font-normal text-muted">VAT 포함</span>
+      </p>
       <p className={`mt-0.5 text-xl font-semibold tabular-nums ${highlight ? "text-sale" : ""}`}>{value}</p>
       {sub && <p className="mt-0.5 text-[11px] text-muted">{sub}</p>}
     </div>
@@ -356,7 +358,10 @@ export function UnitPriceSimulator() {
             </div>
 
             <div className="rounded-2xl border border-line bg-surface p-3">
-              <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 판매가를 정해요</p>
+              <p className="mb-2 px-1 text-xs text-muted">
+                개당 원가 + 판관비를 바탕으로 판매가를 정해요 ·{" "}
+                <b className="font-semibold text-sale">이 칸의 금액은 모두 VAT 포함</b>
+              </p>
               <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
                 <Card title="개당 원가" aside="VAT 포함" tone="cost">
                   <CostList items={unitCosts} onChange={(v) => set("unitCosts", v)} addLabel="원가 항목 추가" />
@@ -410,7 +415,7 @@ export function UnitPriceSimulator() {
 
                 <Connector>→</Connector>
 
-                <Card title="가격 설정" tone="price">
+                <Card title="가격 설정" aside="VAT 포함" tone="price">
                   <div className="space-y-3">
                     <div>
                       <p className="mb-1 text-sm">판매가 (VAT 포함)</p>
@@ -430,7 +435,7 @@ export function UnitPriceSimulator() {
                         채널별 개당 이익은 이 금액으로 계산해요 · 10mL당 {won((sellingPrice / PRODUCT.volumeMl) * 10)}원
                       </p>
                       <p className="mt-2 rounded-md bg-surface px-2 py-1.5 text-xs">
-                        헤르바 마진{" "}
+                        헤르바 마진 <span className="text-[10px] text-muted">VAT 포함</span>{" "}
                         <b className="font-semibold text-sale">
                           {won(herbaMargin)}원 ({pct(sellingPrice > 0 ? herbaMargin / sellingPrice : 0)})
                         </b>
