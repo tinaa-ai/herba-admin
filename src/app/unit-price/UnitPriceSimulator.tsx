@@ -47,6 +47,15 @@ function loadState(): SimState | null {
     merged.channels = merged.channels.map((c) => (c.everyday && c.discount === 10 ? { ...c, discount: 0 } : c));
     // 판매가는 이제 정가 × (1 − 상시 할인율)로 계산해요. 따로 저장하던 sellingPrice는 버려요
     delete (merged as Record<string, unknown>).sellingPrice;
+    // 검사/품질 관리(개당 원가)를 판관비 '연구개발비 (임상·개발·품질검사)'로 옮겼어요
+    const qc = merged.unitCosts.find((c) => c.id === "qc");
+    if (qc) {
+      merged.unitCosts = merged.unitCosts.filter((c) => c.id !== "qc");
+      const defRnd = DEFAULT_STATE.fixedCosts.find((c) => c.id === "rnd");
+      merged.fixedCosts = merged.fixedCosts.map((c) =>
+        c.id === "rnd" && defRnd ? { ...c, label: defRnd.label, amount: c.amount === 0 ? defRnd.amount : c.amount } : c,
+      );
+    }
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {
@@ -259,7 +268,10 @@ export function UnitPriceSimulator() {
   const floorPrice = price * (1 - floorDiscount / 100);
 
   const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
-  const unitCostTotal = unitCosts.reduce((s, c) => s + c.amount, 0);
+  // 개당 원가 = 항목 합계 × (1 + 로스율). 불량·샘플로 나가는 만큼 더 만들어야 해서요
+  const unitItemsTotal = unitCosts.reduce((s, c) => s + c.amount, 0);
+  const lossCost = unitItemsTotal * (state.lossRate / 100);
+  const unitCostTotal = unitItemsTotal + lossCost;
   const fixedTotal = fixedCosts.reduce((s, c) => s + c.amount, 0);
   const sgaPerUnit = quantity > 0 ? fixedTotal / quantity : 0;
   // 수출은 영세율이라 원가를 VAT 뺀 금액으로 봐요. 인건비는 원래 부가세가 없어서 그대로
@@ -336,6 +348,22 @@ export function UnitPriceSimulator() {
               <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
                 <Card title="개당 원가" aside="VAT 포함" tone="cost">
                   <CostList items={unitCosts} onChange={(v) => set("unitCosts", v)} addLabel="원가 항목 추가" />
+                  <div className="mt-3 border-t border-line pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 px-1 text-sm">로스율 (불량·파손·샘플)</span>
+                      <NumberInput
+                        label="로스율"
+                        value={state.lossRate}
+                        onChange={(v) => set("lossRate", Math.min(100, Math.max(0, v)))}
+                        suffix="%"
+                        className="w-32 shrink-0"
+                      />
+                      <span className="w-5 shrink-0" />
+                    </div>
+                    <p className="pl-1 text-[11px] text-muted">
+                      위 항목 합계 {won(unitItemsTotal)}원 × {state.lossRate}% = 개당 +{won(lossCost)}원
+                    </p>
+                  </div>
                   <div className="mt-3 border-t border-line pt-3">
                     <div className="flex items-center gap-2">
                       <span className="flex-1 px-1 text-sm">3PL 물류비 (택배박스, 충전재)</span>

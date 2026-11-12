@@ -68,6 +68,8 @@ export type ExportSim = {
 export type SimState = {
   unitCosts: CostItem[];
   shippingCost: number;
+  /** 로스율 % (불량·파손·샘플·유통기한). 개당 원가 항목 합계에 더해요 */
+  lossRate: number;
   fixedCosts: CostItem[];
   quantity: number;
   /** 정가 (VAT 포함). 보여주는 숫자이고, 약국 공급률·수출 정가 대비의 기준 */
@@ -91,11 +93,11 @@ export const DEFAULT_STATE: SimState = {
     { id: "labor", label: "제조 노무비", amount: 1045 },
     { id: "material", label: "부자재", amount: 1045, note: "튜브+단상자+봉합라벨+박스 · 용기 MOQ 10,000개" },
     { id: "assembly", label: "임가공비 (충진+포장)", amount: 66 },
-    { id: "qc", label: "검사/품질 관리", amount: 1100 },
   ],
   shippingCost: 3300,
+  lossRate: 3,
   fixedCosts: [
-    { id: "rnd", label: "연구개발비", amount: 0 },
+    { id: "rnd", label: "연구개발비 (임상·개발·품질검사)", amount: 11000000 },
     { id: "storage", label: "창고 보관료", amount: 110000 },
     { id: "cs", label: "CS", amount: 2200000 },
     { id: "ads", label: "광고 판촉비 (마케팅)", amount: 5500000 },
