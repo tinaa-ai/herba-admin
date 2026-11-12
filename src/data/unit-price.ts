@@ -99,7 +99,6 @@ export const DEFAULT_STATE: SimState = {
       main: true,
       everyday: true,
     },
-    { id: "pharmacy", name: "약국", fee: 40, card: 0, discount: 0, shipping: false, main: true },
     { id: "oliveyoung", name: "올리브영", fee: 60, card: 0, discount: 0, shipping: false },
     { id: "musinsa", name: "무신사", fee: 30, card: 0, discount: 0, shipping: true },
     { id: "kakao-store", name: "카카오톡 톡스토어", fee: 3.3, card: 0, discount: 0, shipping: true },
