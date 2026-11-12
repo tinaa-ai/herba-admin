@@ -5,26 +5,11 @@ import { Fold, NumberInput, pct, won } from "./ui";
 
 const VAT = 1.1;
 
-function Stat({
-  label,
-  value,
-  tag,
-  children,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  tag?: string;
-  children?: React.ReactNode;
-  highlight?: boolean;
-}) {
+function Stat({ label, value, children }: { label: string; value: string; children?: React.ReactNode }) {
   return (
-    <div className={`rounded-xl border px-4 py-3 ${highlight ? "border-hero-line bg-hero" : "border-line bg-surface"}`}>
-      <p className={`text-xs ${highlight ? "font-medium text-sale" : "text-muted"}`}>{label}</p>
-      <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">
-        {value}
-        {tag && <span className="ml-1.5 align-middle text-[11px] font-normal text-muted">{tag}</span>}
-      </p>
+    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+      <p className="text-xs text-muted">{label}</p>
+      <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
       <div className="mt-1 space-y-1.5 text-[11px] text-muted">{children}</div>
     </div>
   );
@@ -32,7 +17,7 @@ function Stat({
 
 const tierLabel = (t: PharmacyTier) => (t.to !== undefined ? `${won(t.from)}~${won(t.to)}개` : `${won(t.from)}개 이상`);
 
-/** 페이지 맨 위 요약: 정가 · 상시 할인가 · 하한선 · 약국 유통 수량별 공급가 */
+/** 페이지 맨 위 요약: 정가 · 상시 할인가 · 하한선, 그 아래 접는 패널들 */
 export function PriceSummary({
   state,
   setState,
@@ -88,12 +73,10 @@ export function PriceSummary({
     <section className="rounded-2xl border border-line bg-surface p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold">한눈에 보기</h2>
-        <span className="text-xs text-muted">
-          VAT 포함 (약국 유통 공급가는 VAT 별도도 함께) · 칸을 눌러 바로 고칠 수 있어요
-        </span>
+        <span className="text-xs text-muted">VAT 포함 · 칸을 눌러 바로 고칠 수 있어요</span>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="정가" value={`${won(price)}원`}>
           <NumberInput
             label="정가"
@@ -131,30 +114,6 @@ export function PriceSummary({
             이 밑으로는 안 내려가요
           </p>
         </Stat>
-
-        {first && (
-          <Stat
-            label={`약국 유통 공급가 · ${tierLabel(first)}`}
-            value={`${won(calc(first).supplyEx)}원`}
-            tag="VAT 별도"
-            highlight
-          >
-            <p className="text-foreground">
-              공급률 {first.rate}% · VAT 포함 {won(calc(first).supply)}원
-            </p>
-            <p>
-              헤르바 개당 남는 금액{" "}
-              <b className={`font-semibold ${calc(first).profit < 0 ? "text-sale" : "text-accent"}`}>
-                {won(calc(first).profit)}원
-              </b>
-            </p>
-            {last && last !== first && (
-              <p>
-                {tierLabel(last)}는 공급률 {last.rate}% · {won(calc(last).supplyEx)}원
-              </p>
-            )}
-          </Stat>
-        )}
       </div>
 
       <div className="mt-4 space-y-3">
