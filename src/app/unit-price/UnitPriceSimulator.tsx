@@ -19,8 +19,10 @@ function loadState(): SimState | null {
     const merged = { ...DEFAULT_STATE, ...parsed };
     // 수출 설정에 새 칸(페소·엔 환율 등)이 생기면 기본값으로 채워요
     merged.exportSim = { ...DEFAULT_STATE.exportSim, ...parsed.exportSim };
-    // 정가 기본값이 24,900 → 25,000으로 바뀌었어요. 손대지 않은 옛 기본값이면 새 값으로 바꿔요
-    if (merged.price === 24900) merged.price = DEFAULT_STATE.price;
+    // 정가 기본값이 24,900 → 25,000 → 27,000원으로 바뀌었어요. 손대지 않은 옛 기본값이면 새 값으로
+    if (merged.price === 24900 || merged.price === 25000) merged.price = DEFAULT_STATE.price;
+    // 판매가로 거꾸로 계산하던 상시 할인율의 소수점 오차(9.9999…%)를 정리해요
+    merged.everydayDiscount = Math.round(merged.everydayDiscount * 10000) / 10000;
     // 하한선을 금액(floorPrice)에서 할인율(floorDiscount)로 바꿨어요. 옛 저장값의 floorPrice는 버려요
     delete (merged as Partial<SimState> & { floorPrice?: number }).floorPrice;
     // 약국 유통 1·2·3안(distributorPlans)을 수량 구간별 공급률(pharmacyTiers) 하나로 바꿨어요

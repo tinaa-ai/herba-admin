@@ -109,7 +109,7 @@ export const DEFAULT_STATE: SimState = {
     { id: "etc", label: "기타 운영관리비", amount: 11000000 },
   ],
   quantity: 10000,
-  price: 25000,
+  price: 27000, // 2026-11-12 정가 27,000원 확정 (판매가 = 상시 할인 10% → 24,300원)
   floorDiscount: 20,
   everydayDiscount: 10,
   pharmacyTiers: [
