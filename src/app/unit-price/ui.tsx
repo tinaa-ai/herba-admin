@@ -67,6 +67,7 @@ export function Fold({
   subtitle,
   summary,
   tone = "red",
+  arrowClass,
   handle,
   children,
 }: {
@@ -75,6 +76,8 @@ export function Fold({
   subtitle?: string;
   summary?: React.ReactNode;
   tone?: keyof typeof FOLD_TONE;
+  /** 화살표 색만 따로 바꿀 때 (예: "text-muted") */
+  arrowClass?: string;
   /** 제목 줄 왼쪽에 놓는 드래그 손잡이 */
   handle?: React.ReactNode;
   children: React.ReactNode;
@@ -94,7 +97,7 @@ export function Fold({
           onClick={() => setOpen((o) => !o)}
           className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 py-3 pr-4 text-left ${handle ? "pl-1" : "pl-4"}`}
         >
-          <span className={`text-xs ${t.arrow} transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+          <span className={`text-xs ${arrowClass ?? t.arrow} transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
           <span className="text-sm font-semibold">{title}</span>
           {subtitle && <span className="text-xs text-muted">{subtitle}</span>}
           {!open && summary && <span className="ml-auto text-xs tabular-nums text-muted">{summary}</span>}
