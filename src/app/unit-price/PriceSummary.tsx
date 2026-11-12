@@ -159,7 +159,7 @@ export function PriceSummary({
                   title="판매가 계산 디테일"
                   subtitle="개당 원가 + 판관비 → 판매가·목표 이익률 · 모든 금액 VAT 포함"
                   summary={detailSummary}
-                  arrowClass="text-muted"
+                  tone="gray"
                 >
                   {detail}
                 </Fold>

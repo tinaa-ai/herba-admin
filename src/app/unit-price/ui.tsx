@@ -58,6 +58,7 @@ export function NumberInput({
 const FOLD_TONE = {
   red: { line: "border-hero-line", bg: "bg-hero", hover: "hover:bg-hero", arrow: "text-sale" },
   blue: { line: "border-export-line", bg: "bg-export-soft", hover: "hover:bg-export-soft", arrow: "text-export" },
+  gray: { line: "border-line", bg: "bg-subtle", hover: "hover:bg-subtle", arrow: "text-muted" },
 };
 
 /** 제목 줄을 누르면 펼쳐지는 패널. 처음에는 접혀 있고, 접혔을 때는 summary를 한 줄로 보여줘요 */
