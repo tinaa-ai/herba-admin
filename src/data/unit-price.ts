@@ -38,7 +38,14 @@ export type Channel = {
 };
 
 /** 약국 유통사(매입 유통) 수량 구간. rate는 공급률: 정가의 몇 %를 받고 넘기는지 */
-export type PharmacyTier = { id: string; from: number; to?: number; rate: number };
+export type PharmacyTier = {
+  id: string;
+  from: number;
+  to?: number;
+  rate: number;
+  /** '주문 시 남는 금액'을 계산할 주문 수량. 없으면 구간 시작 수량 */
+  orderQty?: number;
+};
 
 export type SimState = {
   unitCosts: CostItem[];

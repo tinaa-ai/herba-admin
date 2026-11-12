@@ -68,8 +68,9 @@ export function PriceSummary({
   const calc = (t: PharmacyTier) => {
     const supply = price * (t.rate / 100); // VAT 포함
     const profit = supply - cost;
-    const exampleQty = t.from; // 구간 최소 주문 수량 기준
-    return { supply, supplyEx: supply / VAT, share: price - supply, profit, exampleQty };
+    const orderQty = t.orderQty ?? t.from;
+    const inRange = orderQty >= t.from && (t.to === undefined || orderQty <= t.to);
+    return { supply, supplyEx: supply / VAT, share: price - supply, profit, orderQty, inRange };
   };
   const first = pharmacyTiers[0];
   const last = pharmacyTiers[pharmacyTiers.length - 1];
@@ -179,9 +180,10 @@ export function PriceSummary({
             )
           }
         >
-          <p className="mb-2 px-1 text-xs text-muted">
-            공급률 = 정가 중 헤르바가 받는 비율 · 공급가 = 정가 × 공급률 · 나머지는 유통사와 약국 몫 · 대량 입고라
-            택배비 제외
+          <p className="mb-2 px-1 text-xs leading-relaxed text-muted">
+            <b className="font-semibold text-sale">공급률</b> = 정가 중 헤르바가 받는 비율 · 공급가 = 정가 × 공급률 ·
+            나머지는 유통사와 약국 몫 · <b className="font-semibold text-sale">대량 입고라 택배비 제외</b> ·{" "}
+            <b className="font-semibold text-sale">미팅 때는 VAT 별도 공급가로 제시</b>
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-sm">
@@ -247,9 +249,20 @@ export function PriceSummary({
                           공급가의 {pct(r.supply > 0 ? r.profit / r.supply : 0)}
                         </span>
                       </td>
-                      <td className={`px-2 py-2 text-right tabular-nums ${loss ? "text-sale" : ""}`}>
-                        {won(r.profit * r.exampleQty)}원
-                        <span className="block text-[11px] text-muted">{won(r.exampleQty)}개 기준</span>
+                      <td className="px-2 py-2 text-right">
+                        <div className="flex items-center justify-end gap-1 text-xs text-muted">
+                          <NumberInput
+                            label={`${tierLabel(t)} 주문 수량`}
+                            value={r.orderQty}
+                            onChange={(v) => setTier(t.id, { orderQty: Math.max(0, v) })}
+                            className="w-24"
+                          />
+                          개 주문 시
+                        </div>
+                        <p className={`mt-1 font-semibold tabular-nums ${loss ? "text-sale" : ""}`}>
+                          {won(r.profit * r.orderQty)}원
+                        </p>
+                        {!r.inRange && <p className="text-[11px] text-warn">이 수량은 {tierLabel(t)} 구간 밖이에요</p>}
                       </td>
                     </tr>
                   );
@@ -257,12 +270,24 @@ export function PriceSummary({
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-muted">
-            헤르바 남는 금액 = 공급가(VAT 포함) − 개당 원가 {won(unitCostTotal)}원 − 개당 판관비 {won(sgaPerUnit)}원.
-            다른 표와 같이 VAT 포함 기준이고 부가세 정산(약 1/11)은 빼지 않았어요. 공급률이{" "}
-            <b className="font-medium text-foreground">{pct(minRate)}</b> 밑으로 내려가면 손해예요. 판관비는 정가 계산
-            디테일의 판매 수량 기준이에요.
-          </p>
+          <div className="mt-3 rounded-lg bg-hero px-3 py-2.5 text-xs leading-relaxed">
+            <p className="font-medium underline decoration-sale decoration-2 underline-offset-4">
+              헤르바 개당 남는 금액 = 공급가 − 제품 원가 {won(unitCostTotal)}원 − 판관비 {won(sgaPerUnit)}원 (= 공급가 −{" "}
+              {won(cost)}원)
+            </p>
+            <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-muted">
+              <li>
+                공급가가{" "}
+                <b className="font-semibold text-sale">
+                  {won(cost)}원(공급률 {pct(minRate)}) 밑이면 손해
+                </b>
+                예요
+              </li>
+              <li>주문 시 남는 금액 = 개당 남는 금액 × 주문 수량 (수량 칸에 직접 입력)</li>
+              <li>금액은 VAT 포함 기준이고, 부가세 정산(약 1/11)은 빼기 전이에요</li>
+              <li>판관비는 정가 계산 디테일의 판매 수량으로 나눈 개당 금액이에요</li>
+            </ul>
+          </div>
         </Fold>
         <Fold id="channel-table" title="채널별 개당 이익" subtitle={channelSubtitle} summary={channelSummary}>
           {channelTable}
