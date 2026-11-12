@@ -47,6 +47,24 @@ export type PharmacyTier = {
   orderQty?: number;
 };
 
+/** 수출(FOB) 수량 구간. margin은 FOB 단가 중 헤르바 이익 비율 % */
+export type ExportTier = { id: string; from: number; to?: number; margin: number; orderQty?: number };
+
+/** 수출(FOB) 단가 산정 입력값. 금액은 수출 영세율이라 VAT 별도(원) */
+export type ExportSim = {
+  /** 원/USD 환율 */
+  fxRate: number;
+  /** 선적 1회당 드는 비용 (주문 수량으로 나눠 개당에 반영) */
+  shipmentCosts: CostItem[];
+  /** 수출 때만 개당 더 드는 비용 */
+  unitExtras: CostItem[];
+  /** 해외 송금 수수료 등 결제 비용 % (FOB 단가 기준) */
+  payFee: number;
+  /** 판관비를 개당 원가에 넣을지 */
+  includeSga: boolean;
+  tiers: ExportTier[];
+};
+
 export type SimState = {
   unitCosts: CostItem[];
   shippingCost: number;
@@ -60,6 +78,7 @@ export type SimState = {
   everydayDiscount: number;
   /** 약국 유통사(바로팜·편한가 등 매입 유통) 수량 구간별 공급률 */
   pharmacyTiers: PharmacyTier[];
+  exportSim: ExportSim;
   targetMargin: number;
   channels: Channel[];
 };
@@ -93,6 +112,25 @@ export const DEFAULT_STATE: SimState = {
     { id: "t3", from: 30000, rate: 46 },
     { id: "t4", from: 50000, rate: 44 },
   ],
+  exportSim: {
+    fxRate: 1400,
+    shipmentCosts: [
+      { id: "inland", label: "내륙 운송·선적항 반입", amount: 300000 },
+      { id: "clearance", label: "수출 통관·포워딩·서류", amount: 400000, note: "THC·서류 발급비 포함" },
+    ],
+    unitExtras: [
+      { id: "packing", label: "수출 포장 (카톤·팔레트)", amount: 100 },
+      { id: "label", label: "현지 라벨·스티커", amount: 50 },
+    ],
+    payFee: 1,
+    includeSga: true,
+    tiers: [
+      { id: "e1", from: 1000, to: 9999, margin: 30 },
+      { id: "e2", from: 10000, margin: 27 },
+      { id: "e3", from: 30000, margin: 24 },
+      { id: "e4", from: 50000, margin: 20 },
+    ],
+  },
   targetMargin: 20,
   channels: [
     { id: "own", name: "자사몰", fee: 0, card: 3, discount: 10, shipping: true, main: true, everyday: true },

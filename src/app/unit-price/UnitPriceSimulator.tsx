@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_STATE, PRODUCT, QUOTE, type Channel, type CostItem, type SimState } from "@/data/unit-price";
+import { ExportPanel, exportSummary, makeExportCalc } from "./ExportPanel";
 import { PriceSummary } from "./PriceSummary";
 import { NumberInput, ceil100, pct, won } from "./ui";
 
@@ -240,6 +241,11 @@ export function UnitPriceSimulator() {
   const unitCostTotal = unitCosts.reduce((s, c) => s + c.amount, 0);
   const fixedTotal = fixedCosts.reduce((s, c) => s + c.amount, 0);
   const sgaPerUnit = quantity > 0 ? fixedTotal / quantity : 0;
+  // 수출은 영세율이라 원가를 VAT 뺀 금액으로 봐요. 인건비는 원래 부가세가 없어서 그대로
+  const unitCostExVat = unitCostTotal / 1.1;
+  const sgaExVat =
+    quantity > 0 ? fixedCosts.reduce((s, c) => s + (c.id === "payroll" ? c.amount : c.amount / 1.1), 0) / quantity : 0;
+  const exportCalc = makeExportCalc(state.exportSim, unitCostExVat, sgaExVat, price);
 
   const results: ChannelResult[] = useMemo(
     () =>
@@ -426,6 +432,16 @@ export function UnitPriceSimulator() {
               </div>
             </div>
           </div>
+        }
+        exportSummary={exportSummary(state.exportSim, exportCalc)}
+        exportPanel={
+          <ExportPanel
+            sim={state.exportSim}
+            onChange={(fn) => setState((s) => ({ ...s, exportSim: fn(s.exportSim) }))}
+            unitCostExVat={unitCostExVat}
+            sgaExVat={sgaExVat}
+            listPrice={price}
+          />
         }
         channelSubtitle={`정가 ${won(price)}원에서 채널별 할인율 반영`}
         channelSummary={results

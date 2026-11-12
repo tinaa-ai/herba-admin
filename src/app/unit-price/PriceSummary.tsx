@@ -28,6 +28,8 @@ export function PriceSummary({
   channelTable,
   channelSubtitle,
   channelSummary,
+  exportPanel,
+  exportSummary,
 }: {
   state: SimState;
   setState: React.Dispatch<React.SetStateAction<SimState>>;
@@ -41,6 +43,9 @@ export function PriceSummary({
   channelSubtitle: string;
   /** 접혔을 때 보이는 주력 채널 개당 이익 */
   channelSummary: React.ReactNode;
+  /** 펼치면 보이는 수출(FOB) 단가 산정 */
+  exportPanel: React.ReactNode;
+  exportSummary: React.ReactNode;
 }) {
   const { price, everydayDiscount, floorDiscount, pharmacyTiers } = state;
   const everydayPrice = price * (1 - everydayDiscount / 100);
@@ -247,6 +252,15 @@ export function PriceSummary({
               <li>판관비는 정가 계산 디테일의 판매 수량으로 나눈 개당 금액이에요</li>
             </ul>
           </div>
+        </Fold>
+        <Fold
+          id="export-sim"
+          title="수출"
+          subtitle="인코텀즈 FOB · 수량별 수출 단가(USD)와 헤르바 남는 금액"
+          summary={exportSummary}
+          tone="blue"
+        >
+          {exportPanel}
         </Fold>
         <Fold id="channel-table" title="채널별 개당 이익" subtitle={channelSubtitle} summary={channelSummary}>
           {channelTable}

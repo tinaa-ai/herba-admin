@@ -13,6 +13,9 @@
   --hero-line: #f2dfdb;
   --cost-bg: #f2f0ea;
   --cost-line: #e3e0d6;
+  --export: #1f5fae;
+  --export-soft: #eef4fc;
+  --export-line: #d3e2f5;
   --sale: #c62f2f;
   --panel: #f0efeb;
   --best: #a8721a;
@@ -45,6 +48,9 @@
     --hero-line: #3a2724;
     --cost-bg: #201f1c;
     --cost-line: #34322d;
+    --export: #8bb8ee;
+    --export-soft: #16202e;
+    --export-line: #26364d;
     --sale: #f07870;
     --panel: #141414;
     --best: #e2b45c;
@@ -77,6 +83,9 @@
   --color-hero-line: var(--hero-line);
   --color-cost-bg: var(--cost-bg);
   --color-cost-line: var(--cost-line);
+  --color-export: var(--export);
+  --color-export-soft: var(--export-soft);
+  --color-export-line: var(--export-line);
   --color-sale: var(--sale);
   --color-panel: var(--panel);
   --color-best: var(--best);
