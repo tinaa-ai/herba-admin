@@ -1,7 +1,7 @@
 "use client";
 
 import { PRODUCT, type PharmacyTier, type SimState } from "@/data/unit-price";
-import { Fold, NumberInput, pct, won } from "./ui";
+import { Fold, NumberInput, SortableStack, pct, won } from "./ui";
 
 const VAT = 1.1;
 
@@ -121,150 +121,190 @@ export function PriceSummary({
         </Stat>
       </div>
 
-      <div className="mt-4 space-y-3">
-        <Fold
-          id="price-detail"
-          title="정가 계산 디테일"
-          subtitle="개당 원가 + 판관비 → 정가·하한선·목표 이익률"
-          summary={detailSummary}
-        >
-          {detail}
-        </Fold>
-        <Fold
-          id="distributor-sim"
-          title="약국 유통"
-          subtitle="바로팜·편한가 등 매입 유통 · 수량별 공급가와 헤르바 남는 금액"
-          summary={
-            first &&
-            last && (
-              <>
-                {tierLabel(first)} {won(calc(first).supplyEx)}원 → {tierLabel(last)} {won(calc(last).supplyEx)}원 (VAT
-                별도)
-              </>
-            )
-          }
-        >
-          <p className="mb-2 px-1 text-xs leading-relaxed text-muted">
-            <b className="font-semibold text-sale">공급률</b> = 정가 중 헤르바가 받는 비율 · 공급가 = 정가 × 공급률 ·
-            나머지는 유통사와 약국 몫 · <b className="font-semibold text-sale">대량 입고라 택배비 제외</b> ·{" "}
-            <b className="font-semibold text-sale">미팅 때는 VAT 별도 공급가로 제시</b>
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-xs text-muted">
-                  <th className="px-2 py-2 font-normal">주문 수량</th>
-                  <th className="w-24 px-2 py-2 text-right font-normal">공급률</th>
-                  <th className="px-2 py-2 text-right font-normal">공급가 (VAT 별도)</th>
-                  <th className="px-2 py-2 text-right font-normal">공급가 (VAT 포함)</th>
-                  <th className="px-2 py-2 text-right font-normal">유통·약국 몫</th>
-                  <th className="px-2 py-2 text-right font-normal">헤르바 개당 남는 금액</th>
-                  <th className="px-2 py-2 text-right font-normal">주문 시 헤르바 남는 금액</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pharmacyTiers.map((t) => {
-                  const r = calc(t);
-                  const loss = r.profit < 0;
-                  return (
-                    <tr key={t.id} className="border-b border-line last:border-0">
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-1 text-xs text-muted">
-                          <NumberInput
-                            label="구간 시작 수량"
-                            value={t.from}
-                            onChange={(v) => setTier(t.id, { from: Math.max(0, v) })}
-                            className="w-24"
-                          />
-                          {t.to !== undefined ? (
-                            <>
-                              ~
-                              <NumberInput
-                                label="구간 끝 수량"
-                                value={t.to}
-                                onChange={(v) => setTier(t.id, { to: Math.max(0, v) })}
-                                className="w-24"
-                              />
-                              개
-                            </>
-                          ) : (
-                            <span className="whitespace-nowrap">개 이상</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-2 py-2">
-                        <NumberInput
-                          label={`${tierLabel(t)} 공급률`}
-                          value={t.rate}
-                          onChange={(v) => setTier(t.id, { rate: Math.min(100, Math.max(0, v)) })}
-                          suffix="%"
-                        />
-                      </td>
-                      <td className="px-2 py-2 text-right text-base font-semibold tabular-nums">{won(r.supplyEx)}원</td>
-                      <td className="px-2 py-2 text-right tabular-nums text-muted">{won(r.supply)}원</td>
-                      <td className="px-2 py-2 text-right tabular-nums text-muted">
-                        {won(r.share)}원 <span className="text-[11px]">({100 - t.rate}%)</span>
-                      </td>
-                      <td
-                        className={`px-2 py-2 text-right font-semibold tabular-nums ${loss ? "text-sale" : "text-accent"}`}
-                      >
-                        {won(r.profit)}원
-                        <span className="block text-[11px] font-normal text-muted">
-                          공급가의 {pct(r.supply > 0 ? r.profit / r.supply : 0)}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2 text-right">
-                        <div className="flex items-center justify-end gap-1 text-xs text-muted">
-                          <NumberInput
-                            label={`${tierLabel(t)} 주문 수량`}
-                            value={r.orderQty}
-                            onChange={(v) => setTier(t.id, { orderQty: Math.max(0, v) })}
-                            className="w-24"
-                          />
-                          개 주문 시
-                        </div>
-                        <p className={`mt-1 font-semibold tabular-nums ${loss ? "text-sale" : ""}`}>
-                          {won(r.profit * r.orderQty)}원
-                        </p>
-                        {!r.inRange && <p className="text-[11px] text-warn">이 수량은 {tierLabel(t)} 구간 밖이에요</p>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-3 rounded-lg bg-hero px-3 py-2.5 text-xs leading-relaxed">
-            <p className="font-medium underline decoration-sale decoration-2 underline-offset-4">
-              헤르바 개당 남는 금액 = 공급가 − 제품 원가 {won(unitCostTotal)}원 − 판관비 {won(sgaPerUnit)}원 (= 공급가 −{" "}
-              {won(cost)}원)
-            </p>
-            <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-muted">
-              <li>
-                공급가가{" "}
-                <b className="font-semibold text-sale">
-                  {won(cost)}원(공급률 {pct(minRate)}) 밑이면 손해
-                </b>
-                예요
-              </li>
-              <li>주문 시 남는 금액 = 개당 남는 금액 × 주문 수량 (수량 칸에 직접 입력)</li>
-              <li>금액은 VAT 포함 기준이고, 부가세 정산(약 1/11)은 빼기 전이에요</li>
-              <li>판관비는 정가 계산 디테일의 판매 수량으로 나눈 개당 금액이에요</li>
-            </ul>
-          </div>
-        </Fold>
-        <Fold
-          id="export-sim"
-          title="수출"
-          subtitle="인코텀즈 FOB · 수량별 수출 단가(USD)와 헤르바 남는 금액"
-          summary={exportSummary}
-          tone="blue"
-        >
-          {exportPanel}
-        </Fold>
-        <Fold id="channel-table" title="채널별 개당 이익" subtitle={channelSubtitle} summary={channelSummary}>
-          {channelTable}
-        </Fold>
+      <div className="mt-4">
+        <SortableStack
+          order={state.panelOrder}
+          onOrder={(panelOrder) => setState((s) => ({ ...s, panelOrder }))}
+          items={{
+            "price-detail": {
+              label: "정가 계산 디테일",
+              render: (handle) => (
+                <Fold
+                  handle={handle}
+                  id="price-detail"
+                  title="정가 계산 디테일"
+                  subtitle="개당 원가 + 판관비 → 정가·하한선·목표 이익률"
+                  summary={detailSummary}
+                >
+                  {detail}
+                </Fold>
+              ),
+            },
+            "distributor-sim": {
+              label: "약국 유통",
+              render: (handle) => (
+                <Fold
+                  handle={handle}
+                  id="distributor-sim"
+                  title="약국 유통"
+                  subtitle="바로팜·편한가 등 매입 유통 · 수량별 공급가와 헤르바 남는 금액"
+                  summary={
+                    first &&
+                    last && (
+                      <>
+                        {tierLabel(first)} {won(calc(first).supplyEx)}원 → {tierLabel(last)} {won(calc(last).supplyEx)}
+                        원 (VAT 별도)
+                      </>
+                    )
+                  }
+                >
+                  <p className="mb-2 px-1 text-xs leading-relaxed text-muted">
+                    <b className="font-semibold text-sale">공급률</b> = 정가 중 헤르바가 받는 비율 · 공급가 = 정가 ×
+                    공급률 · 나머지는 유통사와 약국 몫 ·{" "}
+                    <b className="font-semibold text-sale">대량 입고라 택배비 제외</b> ·{" "}
+                    <b className="font-semibold text-sale">미팅 때는 VAT 별도 공급가로 제시</b>
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[900px] text-sm">
+                      <thead>
+                        <tr className="border-b border-line text-left text-xs text-muted">
+                          <th className="px-2 py-2 font-normal">주문 수량</th>
+                          <th className="w-24 px-2 py-2 text-right font-normal">공급률</th>
+                          <th className="px-2 py-2 text-right font-normal">공급가 (VAT 별도)</th>
+                          <th className="px-2 py-2 text-right font-normal">공급가 (VAT 포함)</th>
+                          <th className="px-2 py-2 text-right font-normal">유통·약국 몫</th>
+                          <th className="px-2 py-2 text-right font-normal">헤르바 개당 남는 금액</th>
+                          <th className="px-2 py-2 text-right font-normal">주문 시 헤르바 남는 금액</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pharmacyTiers.map((t) => {
+                          const r = calc(t);
+                          const loss = r.profit < 0;
+                          return (
+                            <tr key={t.id} className="border-b border-line last:border-0">
+                              <td className="px-2 py-2">
+                                <div className="flex items-center gap-1 text-xs text-muted">
+                                  <NumberInput
+                                    label="구간 시작 수량"
+                                    value={t.from}
+                                    onChange={(v) => setTier(t.id, { from: Math.max(0, v) })}
+                                    className="w-24"
+                                  />
+                                  {t.to !== undefined ? (
+                                    <>
+                                      ~
+                                      <NumberInput
+                                        label="구간 끝 수량"
+                                        value={t.to}
+                                        onChange={(v) => setTier(t.id, { to: Math.max(0, v) })}
+                                        className="w-24"
+                                      />
+                                      개
+                                    </>
+                                  ) : (
+                                    <span className="whitespace-nowrap">개 이상</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-2 py-2">
+                                <NumberInput
+                                  label={`${tierLabel(t)} 공급률`}
+                                  value={t.rate}
+                                  onChange={(v) => setTier(t.id, { rate: Math.min(100, Math.max(0, v)) })}
+                                  suffix="%"
+                                />
+                              </td>
+                              <td className="px-2 py-2 text-right text-base font-semibold tabular-nums">
+                                {won(r.supplyEx)}원
+                              </td>
+                              <td className="px-2 py-2 text-right tabular-nums text-muted">{won(r.supply)}원</td>
+                              <td className="px-2 py-2 text-right tabular-nums text-muted">
+                                {won(r.share)}원 <span className="text-[11px]">({100 - t.rate}%)</span>
+                              </td>
+                              <td
+                                className={`px-2 py-2 text-right font-semibold tabular-nums ${loss ? "text-sale" : "text-accent"}`}
+                              >
+                                {won(r.profit)}원
+                                <span className="block text-[11px] font-normal text-muted">
+                                  공급가의 {pct(r.supply > 0 ? r.profit / r.supply : 0)}
+                                </span>
+                              </td>
+                              <td className="px-2 py-2 text-right">
+                                <div className="flex items-center justify-end gap-1 text-xs text-muted">
+                                  <NumberInput
+                                    label={`${tierLabel(t)} 주문 수량`}
+                                    value={r.orderQty}
+                                    onChange={(v) => setTier(t.id, { orderQty: Math.max(0, v) })}
+                                    className="w-24"
+                                  />
+                                  개 주문 시
+                                </div>
+                                <p className={`mt-1 font-semibold tabular-nums ${loss ? "text-sale" : ""}`}>
+                                  {won(r.profit * r.orderQty)}원
+                                </p>
+                                {!r.inRange && (
+                                  <p className="text-[11px] text-warn">이 수량은 {tierLabel(t)} 구간 밖이에요</p>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 rounded-lg bg-hero px-3 py-2.5 text-xs leading-relaxed">
+                    <p className="font-medium underline decoration-sale decoration-2 underline-offset-4">
+                      헤르바 개당 남는 금액 = 공급가 − 제품 원가 {won(unitCostTotal)}원 − 판관비 {won(sgaPerUnit)}원 (=
+                      공급가 − {won(cost)}원)
+                    </p>
+                    <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-muted">
+                      <li>
+                        공급가가{" "}
+                        <b className="font-semibold text-sale">
+                          {won(cost)}원(공급률 {pct(minRate)}) 밑이면 손해
+                        </b>
+                        예요
+                      </li>
+                      <li>주문 시 남는 금액 = 개당 남는 금액 × 주문 수량 (수량 칸에 직접 입력)</li>
+                      <li>금액은 VAT 포함 기준이고, 부가세 정산(약 1/11)은 빼기 전이에요</li>
+                      <li>판관비는 정가 계산 디테일의 판매 수량으로 나눈 개당 금액이에요</li>
+                    </ul>
+                  </div>
+                </Fold>
+              ),
+            },
+            "export-sim": {
+              label: "수출",
+              render: (handle) => (
+                <Fold
+                  handle={handle}
+                  id="export-sim"
+                  title="수출"
+                  subtitle="인코텀즈 FOB · 수량별 수출 단가(USD)와 헤르바 남는 금액"
+                  summary={exportSummary}
+                  tone="blue"
+                >
+                  {exportPanel}
+                </Fold>
+              ),
+            },
+            "channel-table": {
+              label: "채널별 개당 이익",
+              render: (handle) => (
+                <Fold
+                  handle={handle}
+                  id="channel-table"
+                  title="채널별 개당 이익"
+                  subtitle={channelSubtitle}
+                  summary={channelSummary}
+                >
+                  {channelTable}
+                </Fold>
+              ),
+            },
+          }}
+        />
       </div>
     </section>
   );

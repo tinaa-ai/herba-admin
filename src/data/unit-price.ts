@@ -79,6 +79,8 @@ export type SimState = {
   /** 약국 유통사(바로팜·편한가 등 매입 유통) 수량 구간별 공급률 */
   pharmacyTiers: PharmacyTier[];
   exportSim: ExportSim;
+  /** 접는 패널 순서 (드래그로 바꿈) */
+  panelOrder: string[];
   targetMargin: number;
   channels: Channel[];
 };
@@ -112,6 +114,7 @@ export const DEFAULT_STATE: SimState = {
     { id: "t3", from: 30000, rate: 46 },
     { id: "t4", from: 50000, rate: 44 },
   ],
+  panelOrder: ["price-detail", "distributor-sim", "export-sim", "channel-table"],
   exportSim: {
     fxRate: 1400,
     shipmentCosts: [
