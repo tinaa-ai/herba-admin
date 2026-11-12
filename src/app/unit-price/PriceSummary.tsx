@@ -182,7 +182,8 @@ export function PriceSummary({
                 >
                   <p className="mb-2 px-1 text-xs leading-relaxed text-muted">
                     <b className="font-semibold text-sale">공급률</b> = 정가 {won(price)}원(VAT 포함) 중 헤르바가 받는
-                    비율 · 공급가(VAT 포함) = 정가 × 공급률 → ÷ 1.1 = 공급가(VAT 별도) · 나머지는 유통사와 약국 몫 ·{" "}
+                    비율 · 공급가(VAT 포함) = 정가 × 공급률 → ÷ 1.1 = 공급가(VAT 별도) · 나머지는 유통사와 약국 몫
+                    <br />
                     <b className="font-semibold text-sale">대량 입고라 택배비 제외</b> ·{" "}
                     <b className="font-semibold text-sale">미팅 때는 VAT 별도 공급가로 제시</b> ·{" "}
                     <b className="font-semibold text-sale">헤르바 남는 금액은 부가세 뺀 금액</b>
