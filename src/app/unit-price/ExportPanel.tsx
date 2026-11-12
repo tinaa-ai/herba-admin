@@ -135,7 +135,7 @@ export function ExportPanel({
               />
               <span>판관비 개당 {won(sgaExVat)}원 포함</span>
             </label>
-            <p className="text-[11px] text-muted">환율은 미팅 전에 그날 기준으로 다시 넣어 주세요</p>
+            <p className="text-[11px] text-muted">2026-11-11 종가 기준 · 미팅 전에 그날 환율로 다시 넣어 주세요</p>
           </div>
         </div>
         <div className="rounded-lg border border-export-line bg-export-soft p-3">

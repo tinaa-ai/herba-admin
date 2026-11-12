@@ -116,7 +116,7 @@ export const DEFAULT_STATE: SimState = {
   ],
   panelOrder: ["price-detail", "distributor-sim", "export-sim", "channel-table"],
   exportSim: {
-    fxRate: 1400,
+    fxRate: 1340, // 2026-11-11 종가 약 1,340원 (Trading Economics)
     shipmentCosts: [
       { id: "inland", label: "내륙 운송·선적항 반입", amount: 300000 },
       { id: "clearance", label: "수출 통관·포워딩·서류", amount: 400000, note: "THC·서류 발급비 포함" },

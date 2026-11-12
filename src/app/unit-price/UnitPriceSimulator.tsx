@@ -40,6 +40,9 @@ function loadState(): SimState | null {
         rate: DEFAULT_STATE.pharmacyTiers[i]?.rate ?? t.rate,
       }));
     }
+    // 환율 기본값을 1,400 → 1,340원으로 바꿨어요. 옛 기본값 그대로면 새 값으로
+    if (merged.exportSim.fxRate === 1400)
+      merged.exportSim = { ...merged.exportSim, fxRate: DEFAULT_STATE.exportSim.fxRate };
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {
