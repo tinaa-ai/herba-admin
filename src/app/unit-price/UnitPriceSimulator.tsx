@@ -56,6 +56,15 @@ function loadState(): SimState | null {
         c.id === "rnd" && defRnd ? { ...c, label: defRnd.label, amount: c.amount === 0 ? defRnd.amount : c.amount } : c,
       );
     }
+    // 3PL 물류비를 개당 원가(채널별 개별 배송)에서 판관비로 옮겼어요. 예전 개당 금액 × 판매 수량으로 넣어요
+    const legacy = merged as Partial<SimState> & { shippingCost?: number };
+    if (!merged.fixedCosts.some((c) => c.id === "3pl")) {
+      const def = DEFAULT_STATE.fixedCosts.find((c) => c.id === "3pl")!;
+      const amount = legacy.shippingCost !== undefined ? legacy.shippingCost * merged.quantity : def.amount;
+      const at = merged.fixedCosts.findIndex((c) => c.id === "storage") + 1;
+      merged.fixedCosts = [...merged.fixedCosts.slice(0, at), { ...def, amount }, ...merged.fixedCosts.slice(at)];
+    }
+    delete legacy.shippingCost;
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {
@@ -250,17 +259,7 @@ export function UnitPriceSimulator() {
       state.channels.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     );
 
-  const {
-    unitCosts,
-    shippingCost,
-    fixedCosts,
-    quantity,
-    price,
-    everydayDiscount,
-    floorDiscount,
-    targetMargin,
-    channels,
-  } = state;
+  const { unitCosts, fixedCosts, quantity, price, everydayDiscount, floorDiscount, targetMargin, channels } = state;
   // 판매가 = 상시 할인가. 판매가를 직접 고치면 상시 할인율이 거꾸로 계산돼요
   const sellingPrice = price * (1 - everydayDiscount / 100);
   const setSellingPrice = (v: number) =>
@@ -284,7 +283,7 @@ export function UnitPriceSimulator() {
     () =>
       channels.map((channel) => {
         const rate = (channel.fee + channel.card) / 100;
-        const cogs = unitCostTotal + (channel.shipping ? shippingCost : 0);
+        const cogs = unitCostTotal;
         const sale = sellingPrice * (1 - channel.discount / 100);
         const fee = sale * rate;
         const profit = sale - fee - cogs - sgaPerUnit;
@@ -303,7 +302,7 @@ export function UnitPriceSimulator() {
           target: tDenom > 0 ? ceil100(cost / tDenom) : null,
         };
       }),
-    [channels, unitCostTotal, shippingCost, sellingPrice, sgaPerUnit, targetMargin],
+    [channels, unitCostTotal, sellingPrice, sgaPerUnit, targetMargin],
   );
 
   const belowMoq = quantity > 0 && quantity < QUOTE.containerMoq;
@@ -317,7 +316,7 @@ export function UnitPriceSimulator() {
         sgaPerUnit={sgaPerUnit}
         unitCostExVat={unitCostExVat}
         sgaExVat={sgaExVat}
-        detailSummary={`판매가 ${won(sellingPrice)}원 · 개당 총원가 ${won(unitCostTotal + sgaPerUnit)}원 · 개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원`}
+        detailSummary={`판매가 ${won(sellingPrice)}원 · 개당 총원가 ${won(unitCostTotal + sgaPerUnit)}원`}
         detail={
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -329,7 +328,7 @@ export function UnitPriceSimulator() {
               <Tile
                 label="개당 원가"
                 value={`${won(unitCostTotal)}원`}
-                sub={`개별 배송 채널은 +${won(shippingCost)}원 = ${won(unitCostTotal + shippingCost)}원`}
+                sub={`원료·노무·부자재 + 로스 ${state.lossRate}%`}
               />
               <Tile
                 label="개당 판관비"
@@ -339,7 +338,7 @@ export function UnitPriceSimulator() {
               <Tile
                 label="개당 총원가"
                 value={`${won(unitCostTotal + sgaPerUnit)}원`}
-                sub={`개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원 · 채널 수수료 제외`}
+                sub="개당 원가 + 개당 판관비 · 채널 수수료 제외"
               />
             </div>
 
@@ -364,25 +363,9 @@ export function UnitPriceSimulator() {
                       위 항목 합계 {won(unitItemsTotal)}원 × {state.lossRate}% = 개당 +{won(lossCost)}원
                     </p>
                   </div>
-                  <div className="mt-3 border-t border-line pt-3">
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1 px-1 text-sm">3PL 물류비 (택배박스, 충전재)</span>
-                      <NumberInput
-                        label="3PL 물류비"
-                        value={shippingCost}
-                        onChange={(v) => set("shippingCost", v)}
-                        suffix="원"
-                        className="w-32 shrink-0"
-                      />
-                      <span className="w-5 shrink-0" />
-                    </div>
-                    <p className="pl-1 text-[11px] text-muted">
-                      아래 채널 표에서 &lsquo;개별 배송&rsquo;에 체크한 채널에만 들어가요
-                    </p>
-                  </div>
                   <div className="mt-3 space-y-1 border-t border-line pt-3">
-                    <Row label="원가 소계" value={`${won(unitCostTotal)}원`} />
-                    <Row label="개별 배송 포함" value={`${won(unitCostTotal + shippingCost)}원`} strong />
+                    <Row label="개당 원가" value={`${won(unitCostTotal)}원`} strong />
+                    <p className="text-[11px] text-muted">택배·보관 등 3PL 물류비는 판관비에 있어요</p>
                   </div>
                 </Card>
 
@@ -503,7 +486,6 @@ export function UnitPriceSimulator() {
                     <th className="px-2 py-2 text-right font-normal">실판매가</th>
                     <th className="w-24 px-2 py-2 text-right font-normal">판매 수수료</th>
                     <th className="w-24 px-2 py-2 text-right font-normal">결제 수수료</th>
-                    <th className="px-2 py-2 text-center font-normal">개별 배송</th>
                     <th className="px-2 py-2 text-right font-normal">수수료</th>
                     <th className="px-2 py-2 text-right font-normal">개당 이익</th>
                     <th className="px-2 py-2 text-right font-normal">이익률</th>
@@ -521,7 +503,7 @@ export function UnitPriceSimulator() {
                   ].map((group) => [
                     group.rows.length > 0 && (
                       <tr key={group.label} className="border-b border-line bg-subtle/60">
-                        <td colSpan={14} className="px-3 py-1.5 text-xs font-medium text-muted">
+                        <td colSpan={13} className="px-3 py-1.5 text-xs font-medium text-muted">
                           {group.label} <span className="font-normal">· {group.rows.length}곳</span>
                         </td>
                       </tr>
@@ -584,15 +566,6 @@ export function UnitPriceSimulator() {
                               suffix="%"
                             />
                           </td>
-                          <td className="px-2 py-1.5 text-center">
-                            <input
-                              type="checkbox"
-                              aria-label={`${c.name} 개별 배송`}
-                              checked={c.shipping}
-                              onChange={(e) => updateChannel(c.id, { shipping: e.target.checked })}
-                              className="size-4 accent-[var(--accent)]"
-                            />
-                          </td>
                           <td className="px-2 py-1.5 text-right tabular-nums text-muted">{won(r.fee)}</td>
                           <td
                             className={`px-2 py-1.5 text-right font-semibold tabular-nums ${loss ? "text-sale" : "text-accent"}`}
@@ -650,7 +623,6 @@ export function UnitPriceSimulator() {
                       discount: 0,
                       fee: 0,
                       card: 0,
-                      shipping: true,
                     },
                   ])
                 }

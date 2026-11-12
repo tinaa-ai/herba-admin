@@ -27,8 +27,8 @@ export type Channel = {
   fee: number;
   /** 결제(카드) 수수료 % — 채널 수수료에 포함돼 있으면 0 */
   card: number;
-  /** 고객에게 브랜드가 직접 택배를 보내는 채널이면 3PL 물류비를 원가에 넣음 */
-  shipping: boolean;
+  /** (예전 필드) 채널별 택배비 적용 여부 — 3PL 물류비를 판관비로 옮겨서 지금은 쓰지 않아요 */
+  shipping?: boolean;
   /** 판매가에서 추가로 깎는 할인율 % — 실판매가 = 판매가 × (1 − 할인율) */
   discount: number;
   /** 주력 채널: 표 맨 위에 따로 묶어 보여줌 */
@@ -67,7 +67,6 @@ export type ExportSim = {
 
 export type SimState = {
   unitCosts: CostItem[];
-  shippingCost: number;
   /** 로스율 % (불량·파손·샘플·유통기한). 개당 원가 항목 합계에 더해요 */
   lossRate: number;
   fixedCosts: CostItem[];
@@ -94,11 +93,11 @@ export const DEFAULT_STATE: SimState = {
     { id: "material", label: "부자재", amount: 1045, note: "튜브+단상자+봉합라벨+박스 · 용기 MOQ 10,000개" },
     { id: "assembly", label: "임가공비 (충진+포장)", amount: 66 },
   ],
-  shippingCost: 3300,
   lossRate: 3,
   fixedCosts: [
     { id: "rnd", label: "연구개발비 (임상·개발·품질검사)", amount: 11000000 },
     { id: "storage", label: "창고 보관료", amount: 110000 },
+    { id: "3pl", label: "3PL 물류비 (택배·보관·충전재)", amount: 33000000, note: "개당 3,000원 × 1만 개 + VAT" },
     { id: "cs", label: "CS", amount: 2200000 },
     { id: "ads", label: "광고 판촉비 (마케팅)", amount: 5500000 },
     { id: "service", label: "지급 수수료", amount: 550000 },
@@ -138,25 +137,24 @@ export const DEFAULT_STATE: SimState = {
   },
   targetMargin: 20,
   channels: [
-    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 0, shipping: true, main: true, everyday: true },
+    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 0, main: true, everyday: true },
     {
       id: "naver",
       name: "네이버 브랜드스토어",
       fee: 7,
       card: 0,
       discount: 0,
-      shipping: true,
       main: true,
       everyday: true,
     },
-    { id: "oliveyoung", name: "올리브영", fee: 60, card: 0, discount: 0, shipping: false },
-    { id: "musinsa", name: "무신사", fee: 30, card: 0, discount: 0, shipping: true },
-    { id: "kakao-store", name: "카카오톡 톡스토어", fee: 3.3, card: 0, discount: 0, shipping: true },
-    { id: "kakao-gift", name: "카카오톡 선물하기", fee: 30, card: 0, discount: 0, shipping: true },
-    { id: "kurly", name: "마켓컬리", fee: 40, card: 0, discount: 0, shipping: false },
-    { id: "homeshopping", name: "홈쇼핑", fee: 40, card: 0, discount: 0, shipping: true },
-    { id: "influencer", name: "인플루언서 공구", fee: 35, card: 0, discount: 0, shipping: true },
-    { id: "coupang", name: "쿠팡 마켓플레이스", fee: 9.6, card: 0, discount: 0, shipping: true },
-    { id: "gym", name: "헬스장·골프장", fee: 40, card: 0, discount: 0, shipping: false },
+    { id: "oliveyoung", name: "올리브영", fee: 60, card: 0, discount: 0 },
+    { id: "musinsa", name: "무신사", fee: 30, card: 0, discount: 0 },
+    { id: "kakao-store", name: "카카오톡 톡스토어", fee: 3.3, card: 0, discount: 0 },
+    { id: "kakao-gift", name: "카카오톡 선물하기", fee: 30, card: 0, discount: 0 },
+    { id: "kurly", name: "마켓컬리", fee: 40, card: 0, discount: 0 },
+    { id: "homeshopping", name: "홈쇼핑", fee: 40, card: 0, discount: 0 },
+    { id: "influencer", name: "인플루언서 공구", fee: 35, card: 0, discount: 0 },
+    { id: "coupang", name: "쿠팡 마켓플레이스", fee: 9.6, card: 0, discount: 0 },
+    { id: "gym", name: "헬스장·골프장", fee: 40, card: 0, discount: 0 },
   ],
 };
