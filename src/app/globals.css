@@ -17,6 +17,13 @@
   --best-soft: #fbf3df;
   --warn: #b4532a;
   --warn-soft: #f8e9e2;
+  --cat-cosmetic: #b0456a;
+  --cat-cosmetic-soft: #fbe9ef;
+  --cat-body: #2f6b4f;
+  --cat-body-soft: #e3efe8;
+  --cat-wellness: #4a5fa8;
+  --cat-wellness-soft: #e8ecf8;
+  --reach-global: #1f4f8a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -37,6 +44,13 @@
     --best-soft: #2b2416;
     --warn: #e59473;
     --warn-soft: #3a241b;
+    --cat-cosmetic: #ee93b1;
+    --cat-cosmetic-soft: #3a1e28;
+    --cat-body: #7cc4a0;
+    --cat-body-soft: #1d3329;
+    --cat-wellness: #9fb0ec;
+    --cat-wellness-soft: #1f2540;
+    --reach-global: #8fb6ee;
   }
 }
 
@@ -57,6 +71,13 @@
   --color-best-soft: var(--best-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+  --color-cat-cosmetic: var(--cat-cosmetic);
+  --color-cat-cosmetic-soft: var(--cat-cosmetic-soft);
+  --color-cat-body: var(--cat-body);
+  --color-cat-body-soft: var(--cat-body-soft);
+  --color-cat-wellness: var(--cat-wellness);
+  --color-cat-wellness-soft: var(--cat-wellness-soft);
+  --color-reach-global: var(--reach-global);
   --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Malgun Gothic", sans-serif;
 }

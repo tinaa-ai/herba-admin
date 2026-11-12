@@ -1,0 +1,317 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { CALENDAR_YEAR, type FitCategory, type Region, type ShowPlan, type ShowScope, type TradeShow } from "@/data/trade-shows";
+
+const REGIONS: Region[] = ["한국", "일본", "멕시코", "미국", "아시아", "유럽"];
+const FITS: FitCategory[] = ["화장품", "바디케어", "웰니스"];
+const UNDATED = "undated";
+
+const FIT_STYLE: Record<FitCategory, string> = {
+  화장품: "bg-cat-cosmetic-soft text-cat-cosmetic",
+  바디케어: "bg-cat-body-soft text-cat-body",
+  웰니스: "bg-cat-wellness-soft text-cat-wellness",
+};
+
+const PLAN_STYLE: Record<ShowPlan, string> = {
+  "부스 후보": "bg-foreground text-background",
+  "참관 → 부스": "bg-accent-soft text-accent",
+  참관: "bg-subtle text-foreground",
+  "선택 참관": "border border-line text-muted",
+};
+
+function monthKey(s: TradeShow): string {
+  return s.start?.slice(0, 7) ?? s.month ?? UNDATED;
+}
+
+function monthLabel(key: string, withYear = true): string {
+  if (key === UNDATED) return withYear ? "일정 미정" : "미정";
+  const [y, m] = key.split("-");
+  return withYear ? `${y}년 ${Number(m)}월` : `${Number(m)}월`;
+}
+
+function dateRange(s: TradeShow): string {
+  if (!s.start) return s.month ? `${Number(s.month.slice(5))}월 중` : "미정";
+  const [, sm, sd] = s.start.split("-").map(Number);
+  if (!s.end || s.end === s.start) return `${sm}.${sd}`;
+  const [, em, ed] = s.end.split("-").map(Number);
+  return em === sm ? `${sm}.${sd}–${ed}` : `${sm}.${sd}–${em}.${ed}`;
+}
+
+const MONTHS = Array.from({ length: 12 }, (_, i) => `${CALENDAR_YEAR}-${String(i + 1).padStart(2, "0")}`);
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs transition-colors ${
+        active
+          ? "border-foreground bg-foreground text-background"
+          : "border-line bg-surface text-muted hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Badge({ className, children }: { className: string; children: React.ReactNode }) {
+  return (
+    <span className={`inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] leading-none ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+/** 이름 앞 표시: 글로벌형·지역 국제형은 강조, 현지형은 옅게 */
+function ReachBadge({ scope }: { scope: ShowScope }) {
+  if (scope === "글로벌형")
+    return <Badge className="bg-reach-global font-medium text-surface">🌐 글로벌</Badge>;
+  if (scope === "지역 국제형")
+    return <Badge className="border border-reach-global font-medium text-reach-global">권역 국제</Badge>;
+  return <Badge className="border border-line text-muted">로컬</Badge>;
+}
+
+function ShowRow({ show }: { show: TradeShow }) {
+  return (
+    <details className="group border-b border-line last:border-0 [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none gap-4 px-4 py-4 transition-colors hover:bg-subtle/60 sm:gap-6">
+        <div className="w-16 shrink-0 sm:w-24">
+          <div className="text-base font-semibold tabular-nums">{dateRange(show)}</div>
+          {show.dateNote && !show.dateVerified && (
+            <div className="mt-0.5 text-[11px] text-warn" title={show.dateNote}>
+              ⚠ {show.start ? "확인 필요" : "미확정"}
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="text-xs text-muted">
+            {show.flag} {show.country} · {show.city}
+            {show.venue && ` · ${show.venue}`}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <ReachBadge scope={show.scope} />
+            {show.url ? (
+              <a
+                href={show.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium underline decoration-line underline-offset-4 hover:decoration-foreground"
+              >
+                {show.name}
+                <span className="ml-0.5 text-xs text-muted">↗</span>
+              </a>
+            ) : (
+              <span className="font-medium">{show.name}</span>
+            )}
+            {show.rank && (
+              <Badge className="bg-best-soft font-medium text-best">추천 {show.rank}위</Badge>
+            )}
+            {show.fromSheet && <Badge className="bg-subtle text-muted">엑셀 수집</Badge>}
+          </div>
+          <p className="mt-1 text-sm text-muted">{show.focus}</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            <Badge className={`font-medium sm:hidden ${PLAN_STYLE[show.plan]}`}>{show.plan}</Badge>
+            {show.fit.map((f) => (
+              <Badge key={f} className={FIT_STYLE[f]}>
+                {f}
+              </Badge>
+            ))}
+            {show.channels.map((c) => (
+              <Badge key={c} className="bg-subtle text-muted">
+                {c}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        <div className="hidden shrink-0 flex-col items-end gap-2 sm:flex">
+          <Badge className={`px-2 py-1 text-xs font-medium ${PLAN_STYLE[show.plan]}`}>{show.plan}</Badge>
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden
+            className="h-4 w-4 text-muted transition-transform duration-200 group-open:rotate-180"
+          >
+            <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </summary>
+
+      <div className="grid gap-3 bg-panel px-4 pb-4 pt-3 text-sm sm:grid-cols-2 sm:pl-[8.5rem]">
+        <div>
+          <div className="mb-0.5 text-xs font-medium text-accent">장점</div>
+          <p>{show.pros}</p>
+        </div>
+        <div>
+          <div className="mb-0.5 text-xs font-medium text-warn">단점·한계</div>
+          <p>{show.cons}</p>
+        </div>
+        {(show.dateNote || show.url) && (
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted sm:col-span-2">
+            {show.dateNote && <span>일정 메모: {show.dateNote}</span>}
+            {show.url && (
+              <a href={show.url} target="_blank" rel="noreferrer" className="hover:text-foreground hover:underline">
+                공식 사이트 ↗
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
+export function TradeShowCalendar({ shows }: { shows: TradeShow[] }) {
+  const [regions, setRegions] = useState<Set<Region>>(() => new Set());
+  const [fits, setFits] = useState<Set<FitCategory>>(() => new Set());
+  const [boothOnly, setBoothOnly] = useState(false);
+  const [globalOnly, setGlobalOnly] = useState(false);
+
+  const toggle = <T,>(set: Set<T>, value: T, update: (s: Set<T>) => void) => {
+    const next = new Set(set);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    update(next);
+  };
+
+  const filtered = useMemo(
+    () =>
+      shows.filter(
+        (s) =>
+          (regions.size === 0 || regions.has(s.region)) &&
+          (fits.size === 0 || s.fit.some((f) => fits.has(f))) &&
+          (!boothOnly || s.plan === "부스 후보" || s.plan === "참관 → 부스") &&
+          (!globalOnly || s.scope === "글로벌형" || s.scope === "지역 국제형"),
+      ),
+    [shows, regions, fits, boothOnly, globalOnly],
+  );
+
+  const months = MONTHS;
+  const byMonth = useMemo(() => {
+    const map = new Map<string, TradeShow[]>();
+    for (const s of filtered) {
+      const k = monthKey(s);
+      map.set(k, [...(map.get(k) ?? []), s]);
+    }
+    for (const list of map.values()) list.sort((a, b) => (a.start ?? "9").localeCompare(b.start ?? "9"));
+    return map;
+  }, [filtered]);
+
+  const sections = [...months, UNDATED].filter((k) => byMonth.has(k));
+  const filtering = regions.size > 0 || fits.size > 0 || boothOnly || globalOnly;
+
+  return (
+    <div className="space-y-6">
+      {/* 필터 */}
+      <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-10 shrink-0 text-xs text-muted">지역</span>
+          <Chip active={regions.size === 0} onClick={() => setRegions(new Set())}>
+            전체
+          </Chip>
+          {REGIONS.map((r) => (
+            <Chip key={r} active={regions.has(r)} onClick={() => toggle(regions, r, setRegions)}>
+              {r}
+            </Chip>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-10 shrink-0 text-xs text-muted">분류</span>
+          <Chip active={fits.size === 0} onClick={() => setFits(new Set())}>
+            전체
+          </Chip>
+          {FITS.map((f) => (
+            <Chip key={f} active={fits.has(f)} onClick={() => toggle(fits, f, setFits)}>
+              {f}
+            </Chip>
+          ))}
+          <span className="mx-1 h-4 w-px bg-line" />
+          <Chip active={boothOnly} onClick={() => setBoothOnly((v) => !v)}>
+            부스 검토 대상만
+          </Chip>
+          <Chip active={globalOnly} onClick={() => setGlobalOnly((v) => !v)}>
+            글로벌·권역 국제만
+          </Chip>
+          {filtering && (
+            <button
+              type="button"
+              onClick={() => {
+                setRegions(new Set());
+                setFits(new Set());
+                setBoothOnly(false);
+                setGlobalOnly(false);
+              }}
+              className="ml-auto text-xs text-muted hover:text-foreground"
+            >
+              초기화
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 월별 한눈에 보기 */}
+      <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-8 lg:grid-cols-[repeat(13,minmax(0,1fr))]">
+        {[...months, UNDATED].map((k) => {
+          const list = byMonth.get(k) ?? [];
+                    return (
+            <a
+              key={k}
+              href={list.length ? `#m-${k}` : undefined}
+              aria-disabled={list.length === 0}
+              className={`rounded-lg border px-2 py-2 text-center transition-colors ${
+                list.length
+                  ? "border-hero-line bg-hero hover:border-foreground/30"
+                  : "pointer-events-none border-line bg-transparent text-muted/60"
+              }`}
+            >
+                            <div className="text-xs font-medium">{monthLabel(k, false)}</div>
+              <div className="mt-1 flex min-h-2 flex-wrap justify-center gap-0.5">
+                {list.map((s) => (
+                  <span key={s.id} title={s.name} className="text-[11px] leading-none">
+                    {s.flag}
+                  </span>
+                ))}
+              </div>
+            </a>
+          );
+        })}
+      </div>
+
+      {/* 월별 목록 */}
+      {sections.length === 0 ? (
+        <p className="rounded-xl border border-line bg-surface px-4 py-10 text-center text-sm text-muted">
+          조건에 맞는 박람회가 없어요.
+        </p>
+      ) : (
+        sections.map((k) => {
+          const list = byMonth.get(k)!;
+          return (
+            <section key={k} id={`m-${k}`} className="scroll-mt-16">
+              <h2 className="mb-2 flex items-baseline gap-2 px-1">
+                <span className="text-lg font-semibold tracking-tight">{monthLabel(k)}</span>
+                <span className="text-xs text-muted">{list.length}곳</span>
+              </h2>
+              <div className="overflow-hidden rounded-xl border border-line bg-surface">
+                {list.map((s) => (
+                  <ShowRow key={s.id} show={s} />
+                ))}
+              </div>
+            </section>
+          );
+        })
+      )}
+    </div>
+  );
+}

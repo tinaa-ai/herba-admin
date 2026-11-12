@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
 
-const tabs = [{ href: "/competitors", label: "경쟁사 제품 비교" }];
+const tabs = [
+  { href: "/competitors", label: "경쟁사 제품 비교" },
+  { href: "/trade-shows", label: "박람회 일정" },
+];
 
 export function TabNav() {
   const pathname = usePathname();
