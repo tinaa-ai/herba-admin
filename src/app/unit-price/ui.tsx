@@ -12,22 +12,32 @@ export function NumberInput({
   suffix,
   label,
   className = "",
+  required = false,
 }: {
   value: number;
   onChange: (n: number) => void;
   suffix?: string;
   label: string;
   className?: string;
+  /** 계산에 꼭 필요한 칸: 비어 있거나 0이면 주황색으로 표시 */
+  required?: boolean;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
+  const empty =
+    draft !== null
+      ? draft.trim() === "" || Number(draft.replace(/,/g, "")) === 0
+      : !Number.isFinite(value) || value === 0;
+  const missing = required && empty;
   return (
     <label
-      className={`flex items-center rounded-md border border-line bg-surface focus-within:border-foreground ${className}`}
+      title={missing ? "계산에 필요한 값이 비어 있어요" : undefined}
+      className={`flex items-center rounded-md border focus-within:border-foreground ${missing ? "border-warn bg-warn-soft" : "border-line bg-surface"} ${className}`}
     >
       <span className="sr-only">{label}</span>
       <input
         inputMode="decimal"
-        value={draft ?? value.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}
+        placeholder={required ? "입력 필요" : undefined}
+        value={draft ?? (missing ? "" : value.toLocaleString("ko-KR", { maximumFractionDigits: 2 }))}
         onFocus={(e) => {
           setDraft(String(value));
           requestAnimationFrame(() => e.target.select());
@@ -38,9 +48,9 @@ export function NumberInput({
           if (Number.isFinite(n)) onChange(n);
         }}
         onBlur={() => setDraft(null)}
-        className="w-full min-w-0 bg-transparent px-2 py-1.5 text-right text-sm tabular-nums outline-none"
+        className="w-full min-w-0 bg-transparent px-2 py-1.5 text-right text-sm tabular-nums outline-none placeholder:text-warn"
       />
-      {suffix && <span className="pr-2 text-xs text-muted">{suffix}</span>}
+      {suffix && <span className={`pr-2 text-xs ${missing ? "text-warn" : "text-muted"}`}>{suffix}</span>}
     </label>
   );
 }

@@ -96,13 +96,17 @@ export function PriceSummary({
     <section className="rounded-2xl border border-line bg-surface p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold">한눈에 보기</h2>
-        <span className="text-xs text-muted">VAT 포함 · 칸을 눌러 바로 고칠 수 있어요</span>
+        <span className="text-xs text-muted">
+          VAT 포함 · 칸을 눌러 바로 고칠 수 있어요 · <b className="font-medium text-warn">주황색 칸</b>은 계산에
+          필요한데 비어 있는 값이에요
+        </span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="정가" value={`${won(price)}원`}>
           <NumberInput
             label="정가"
+            required
             value={price}
             onChange={(v) => setState((s) => ({ ...s, price: Math.max(0, v) }))}
             suffix="원"
@@ -212,6 +216,7 @@ export function PriceSummary({
                                 <div className="flex items-center gap-1 text-xs text-muted">
                                   <NumberInput
                                     label="구간 시작 수량"
+                                    required
                                     value={t.from}
                                     onChange={(v) => setTier(t.id, { from: Math.max(0, v) })}
                                     className="w-24"
@@ -221,6 +226,7 @@ export function PriceSummary({
                                       ~
                                       <NumberInput
                                         label="구간 끝 수량"
+                                        required
                                         value={t.to}
                                         onChange={(v) => setTier(t.id, { to: Math.max(0, v) })}
                                         className="w-24"
@@ -235,6 +241,7 @@ export function PriceSummary({
                               <td className="px-2 py-2">
                                 <NumberInput
                                   label={`${tierLabel(t)} 공급률`}
+                                  required
                                   value={t.rate}
                                   onChange={(v) => setTier(t.id, { rate: Math.min(100, Math.max(0, v)) })}
                                   suffix="%"
@@ -259,6 +266,7 @@ export function PriceSummary({
                                 <div className="flex items-center justify-end gap-1 text-xs text-muted">
                                   <NumberInput
                                     label={`${tierLabel(t)} 주문 수량`}
+                                    required
                                     value={r.orderQty}
                                     onChange={(v) => setTier(t.id, { orderQty: Math.max(0, v) })}
                                     className="w-24"

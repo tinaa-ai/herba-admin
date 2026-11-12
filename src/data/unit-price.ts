@@ -1,4 +1,4 @@
-// 제품단가금액 탭의 기본값. 화면에서 고친 값은 브라우저에만 저장되고, 여기 값은 "기본값으로" 버튼이 되돌리는 기준이에요.
+// 제품단가금액 탭의 기본값 (2026-11-12 사용자가 화면에서 맞춘 값으로 고정). 화면에서 고친 값은 브라우저에만 저장되고, 여기 값은 "기본값으로" 버튼이 되돌리는 기준이에요.
 // 금액은 모두 VAT 포함(원)이에요. 견적서(QUOTE)만 원본 그대로 VAT 별도예요. 인건비는 부가세가 없는 비용이라 그대로 둬요.
 
 export const PRODUCT = {
@@ -91,7 +91,6 @@ export const DEFAULT_STATE: SimState = {
     { id: "raw", label: "원료비", amount: 1034, note: "견적서 931원 · 공급가 2,840원에 맞춰 940원 + VAT" },
     { id: "labor", label: "제조 노무비", amount: 1045 },
     { id: "material", label: "부자재", amount: 1045, note: "튜브+단상자+봉합라벨+박스 · 용기 MOQ 10,000개" },
-    { id: "assembly", label: "임가공비 (충진+포장)", amount: 66 },
   ],
   lossRate: 3,
   fixedCosts: [
@@ -99,7 +98,7 @@ export const DEFAULT_STATE: SimState = {
     { id: "storage", label: "창고 보관료", amount: 110000 },
     { id: "3pl", label: "3PL 물류비", amount: 33000000, note: "택배·보관·충전재 · 개당 3,000원 × 1만 개 + VAT" },
     { id: "cs", label: "CS", amount: 2200000 },
-    { id: "ads", label: "광고 판촉비 (마케팅)", amount: 5500000 },
+    { id: "ads", label: "광고 판촉비 (마케팅)", amount: 11000000 },
     { id: "service", label: "지급 수수료", amount: 550000 },
     { id: "rent", label: "사무실 임대료", amount: 3300000 },
     { id: "payroll", label: "인건비", amount: 10000000, note: "부가세 없는 비용" },
@@ -117,7 +116,7 @@ export const DEFAULT_STATE: SimState = {
   ],
   panelOrder: ["price-detail", "distributor-sim", "export-sim", "channel-table"],
   exportSim: {
-    fxRate: 1340, // 2026-11-11 종가 약 1,340원 (Trading Economics)
+    fxRate: 1350, // 2026-11-12 직접 입력 (11-11 종가 약 1,340원)
     shipmentCosts: [
       { id: "inland", label: "내륙 운송·선적항 반입", amount: 300000 },
       { id: "clearance", label: "수출 통관·포워딩·서류", amount: 400000, note: "THC·서류 발급비 포함" },

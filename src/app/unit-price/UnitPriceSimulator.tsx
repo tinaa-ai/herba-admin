@@ -165,6 +165,7 @@ function CostList({
             <LabelInput value={it.label} onChange={(label) => update(it.id, { label })} />
             <NumberInput
               label={`${it.label} 금액`}
+              required
               value={it.amount}
               onChange={(amount) => update(it.id, { amount })}
               suffix="원"
@@ -296,7 +297,10 @@ export function UnitPriceSimulator() {
   // 판매가 = 상시 할인가. 판매가를 직접 고치면 상시 할인율이 거꾸로 계산돼요
   const sellingPrice = price * (1 - everydayDiscount / 100);
   const setSellingPrice = (v: number) =>
-    set("everydayDiscount", price > 0 ? Math.min(100, Math.max(0, (1 - v / price) * 100)) : 0);
+    set(
+      "everydayDiscount",
+      price > 0 ? Math.round(Math.min(100, Math.max(0, (1 - v / price) * 100)) * 10000) / 10000 : 0,
+    );
   const floorPrice = price * (1 - floorDiscount / 100);
 
   const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
@@ -428,6 +432,7 @@ export function UnitPriceSimulator() {
                       <span className="text-muted">판매 수량 (배분 기준)</span>
                       <NumberInput
                         label="판매 수량"
+                        required
                         value={quantity}
                         onChange={(v) => set("quantity", Math.max(0, v))}
                         suffix="개"
@@ -452,6 +457,7 @@ export function UnitPriceSimulator() {
                       <p className="mb-1 text-sm">판매가 (VAT 포함)</p>
                       <NumberInput
                         label="판매가"
+                        required
                         value={Math.round(sellingPrice)}
                         onChange={(v) => setSellingPrice(Math.max(0, v))}
                         suffix="원"

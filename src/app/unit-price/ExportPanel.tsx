@@ -61,6 +61,7 @@ function ItemInputs({
             <span className="min-w-0 flex-1">{it.label}</span>
             <NumberInput
               label={it.label}
+              required
               value={it.amount}
               onChange={(v) => onChange(items.map((x) => (x.id === it.id ? { ...x, amount: Math.max(0, v) } : x)))}
               suffix={suffix}
@@ -110,6 +111,7 @@ export function ExportPanel({
               <span className="flex-1">환율</span>
               <NumberInput
                 label="원/USD 환율"
+                required
                 value={sim.fxRate}
                 onChange={(v) => onChange((s) => ({ ...s, fxRate: Math.max(0, v) }))}
                 suffix="원/$"
@@ -135,7 +137,7 @@ export function ExportPanel({
               />
               <span>판관비 개당 {won(sgaExVat)}원 포함 (3PL 물류비 제외)</span>
             </label>
-            <p className="text-[11px] text-muted">2026-11-11 종가 기준 · 미팅 전에 그날 환율로 다시 넣어 주세요</p>
+            <p className="text-[11px] text-muted">2026-11-12 기준 · 미팅 전에 그날 환율로 다시 넣어 주세요</p>
           </div>
         </div>
         <div className="rounded-lg border border-export-line bg-export-soft p-3">
@@ -180,6 +182,7 @@ export function ExportPanel({
                     <div className="flex items-center gap-1 text-xs text-muted">
                       <NumberInput
                         label="구간 시작 수량"
+                        required
                         value={t.from}
                         onChange={(v) => setTier(t.id, { from: Math.max(0, v) })}
                         className="w-24"
@@ -189,6 +192,7 @@ export function ExportPanel({
                           ~
                           <NumberInput
                             label="구간 끝 수량"
+                            required
                             value={t.to}
                             onChange={(v) => setTier(t.id, { to: Math.max(0, v) })}
                             className="w-24"
@@ -229,6 +233,7 @@ export function ExportPanel({
                     <div className="flex items-center justify-end gap-1 text-xs text-muted">
                       <NumberInput
                         label={`${tierLabel(t)} 주문 수량`}
+                        required
                         value={r.qty}
                         onChange={(v) => setTier(t.id, { orderQty: Math.max(0, v) })}
                         className="w-24"
