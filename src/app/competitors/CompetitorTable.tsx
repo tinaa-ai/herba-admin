@@ -106,7 +106,7 @@ function PriceLine({ r, isLowest }: { r: PriceRow; isLowest: boolean }) {
   return (
     <tr
       className={`border-b border-line last:border-0 ${r.excluded ? "text-muted" : ""} ${
-        isLowest ? "bg-hero" : ""
+        isLowest ? "bg-best-soft" : ""
       }`}
     >
       <td className="px-4 py-3 align-top">
@@ -119,7 +119,7 @@ function PriceLine({ r, isLowest }: { r: PriceRow; isLowest: boolean }) {
             <span className="font-medium">{r.channel}</span>
           )}
           {isLowest && (
-            <span className="whitespace-nowrap rounded bg-sale px-1.5 py-0.5 text-[11px] leading-none text-surface">
+            <span className="whitespace-nowrap rounded bg-best px-1.5 py-0.5 text-[11px] font-medium leading-none text-surface">
               최저
             </span>
           )}
@@ -273,7 +273,7 @@ export function CompetitorTable({ items }: { items: ProductSummary[] }) {
                   </tr>
                   {isOpen && (
                     <tr id={panelId} className="border-b border-hero-line">
-                      <td colSpan={7} className="bg-surface/40 px-4 pb-5 pt-3">
+                      <td colSpan={7} className="bg-panel px-4 pb-5 pt-3 shadow-[inset_0_2px_4px_rgba(0,0,0,0.04)]">
                         <PriceDetail {...item} />
                       </td>
                     </tr>
