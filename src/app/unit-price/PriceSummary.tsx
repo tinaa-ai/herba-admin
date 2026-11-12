@@ -23,6 +23,8 @@ export function PriceSummary({
   setState,
   unitCostTotal,
   sgaPerUnit,
+  unitCostExVat,
+  sgaExVat,
   detail,
   detailSummary,
   channelTable,
@@ -35,6 +37,9 @@ export function PriceSummary({
   setState: React.Dispatch<React.SetStateAction<SimState>>;
   unitCostTotal: number;
   sgaPerUnit: number;
+  /** 부가세 뺀 개당 원가·판관비 (약국 유통 남는 금액 계산용) */
+  unitCostExVat: number;
+  sgaExVat: number;
   /** 펼치면 보이는 정가 계산 디테일 (원가·판관비·가격 설정) */
   detail: React.ReactNode;
   detailSummary: React.ReactNode;
@@ -51,13 +56,14 @@ export function PriceSummary({
   const everydayPrice = price * (1 - everydayDiscount / 100);
   const floorPrice = price * (1 - floorDiscount / 100);
 
-  // 유통사 납품은 대량 입고라 개별 택배비 없이 원가 + 판관비만 들어가요
-  const cost = unitCostTotal + sgaPerUnit;
-  const minRate = price > 0 ? Math.min(1, cost / price) : 0;
+  // 유통사 납품은 대량 입고라 개별 택배비 없이 원가 + 판관비만 들어가요.
+  // 남는 금액은 부가세를 뺀 실제 금액: VAT 별도 공급가 − VAT 별도 원가·판관비 (인건비는 원래 부가세 없음)
+  const cost = unitCostExVat + sgaExVat;
+  const minRate = price > 0 ? Math.min(1, (cost * VAT) / price) : 0;
 
   const calc = (t: PharmacyTier) => {
     const supply = price * (t.rate / 100); // VAT 포함
-    const profit = supply - cost;
+    const profit = supply / VAT - cost; // 부가세 뺀 금액
     const orderQty = t.orderQty ?? t.from;
     const inRange = orderQty >= t.from && (t.to === undefined || orderQty <= t.to);
     return { supply, supplyEx: supply / VAT, share: price - supply, profit, orderQty, inRange };
@@ -162,7 +168,8 @@ export function PriceSummary({
                     <b className="font-semibold text-sale">공급률</b> = 정가 중 헤르바가 받는 비율 · 공급가 = 정가 ×
                     공급률 · 나머지는 유통사와 약국 몫 ·{" "}
                     <b className="font-semibold text-sale">대량 입고라 택배비 제외</b> ·{" "}
-                    <b className="font-semibold text-sale">미팅 때는 VAT 별도 공급가로 제시</b>
+                    <b className="font-semibold text-sale">미팅 때는 VAT 별도 공급가로 제시</b> ·{" "}
+                    <b className="font-semibold text-sale">헤르바 남는 금액은 부가세 뺀 금액</b>
                   </p>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-sm">
@@ -173,8 +180,14 @@ export function PriceSummary({
                           <th className="px-2 py-2 text-right font-normal">공급가 (VAT 별도)</th>
                           <th className="px-2 py-2 text-right font-normal">공급가 (VAT 포함)</th>
                           <th className="px-2 py-2 text-right font-normal">유통·약국 몫</th>
-                          <th className="px-2 py-2 text-right font-normal">헤르바 개당 남는 금액</th>
-                          <th className="px-2 py-2 text-right font-normal">주문 시 헤르바 남는 금액</th>
+                          <th className="px-2 py-2 text-right font-normal">
+                            헤르바 개당 남는 금액
+                            <span className="block text-[11px] text-sale">VAT 별도</span>
+                          </th>
+                          <th className="px-2 py-2 text-right font-normal">
+                            주문 시 헤르바 남는 금액
+                            <span className="block text-[11px] text-sale">VAT 별도</span>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -227,7 +240,7 @@ export function PriceSummary({
                               >
                                 {won(r.profit)}원
                                 <span className="block text-[11px] font-normal text-muted">
-                                  공급가의 {pct(r.supply > 0 ? r.profit / r.supply : 0)}
+                                  공급가의 {pct(r.supplyEx > 0 ? r.profit / r.supplyEx : 0)}
                                 </span>
                               </td>
                               <td className="px-2 py-2 text-right">
@@ -255,19 +268,23 @@ export function PriceSummary({
                   </div>
                   <div className="mt-3 rounded-lg bg-hero px-3 py-2.5 text-xs leading-relaxed">
                     <p className="font-medium underline decoration-sale decoration-2 underline-offset-4">
-                      헤르바 개당 남는 금액 = 공급가 − 제품 원가 {won(unitCostTotal)}원 − 판관비 {won(sgaPerUnit)}원 (=
-                      공급가 − {won(cost)}원)
+                      헤르바 개당 남는 금액 = 공급가(VAT 별도) − 제품 원가 {won(unitCostExVat)}원 − 판관비{" "}
+                      {won(sgaExVat)}원 (= 공급가 − {won(cost)}원)
                     </p>
                     <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-muted">
                       <li>
-                        공급가가{" "}
+                        공급가(VAT 별도)가{" "}
                         <b className="font-semibold text-sale">
                           {won(cost)}원(공급률 {pct(minRate)}) 밑이면 손해
                         </b>
                         예요
                       </li>
                       <li>주문 시 남는 금액 = 개당 남는 금액 × 주문 수량 (수량 칸에 직접 입력)</li>
-                      <li>금액은 VAT 포함 기준이고, 부가세 정산(약 1/11)은 빼기 전이에요</li>
+                      <li>
+                        남는 금액은 <b className="font-semibold text-sale">부가세를 뺀 실제 금액</b>이에요.
+                        원가·판관비도 부가세를 뺐어요 (VAT 포함 {won(unitCostTotal)}원·{won(sgaPerUnit)}원 → 부가세 없는
+                        인건비는 그대로)
+                      </li>
                       <li>판관비는 정가 계산 디테일의 판매 수량으로 나눈 개당 금액이에요</li>
                     </ul>
                   </div>

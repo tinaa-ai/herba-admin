@@ -285,6 +285,8 @@ export function UnitPriceSimulator() {
         setState={setState}
         unitCostTotal={unitCostTotal}
         sgaPerUnit={sgaPerUnit}
+        unitCostExVat={unitCostExVat}
+        sgaExVat={sgaExVat}
         detailSummary={`개당 총원가 ${won(unitCostTotal + sgaPerUnit)}원 · 개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원`}
         detail={
           <div className="space-y-4">
