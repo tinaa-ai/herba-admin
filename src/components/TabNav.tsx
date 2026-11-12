@@ -53,9 +53,20 @@ function GroupTab({ group, pathname }: { group: TabGroup; pathname: string }) {
         className={`flex items-center gap-1 ${tabClass(!!current)}`}
       >
         {group.label}
-        <span aria-hidden className={`text-[10px] text-muted transition-transform ${open ? "rotate-180" : ""}`}>
-          ▾
-        </span>
+        <svg
+          aria-hidden
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`ml-0.5 transition-transform ${open ? "rotate-180" : ""}`}
+        >
+          <path d="M2.5 4.5 6 8l3.5-3.5" />
+        </svg>
       </button>
       {open && (
         <div
