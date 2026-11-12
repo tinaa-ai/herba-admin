@@ -81,10 +81,10 @@ export const DEFAULT_STATE: SimState = {
   floorDiscount: 20,
   everydayDiscount: 10,
   pharmacyTiers: [
-    { id: "t1", from: 1000, to: 9999, rate: 55 },
-    { id: "t2", from: 10000, rate: 52 },
-    { id: "t3", from: 30000, rate: 50 },
-    { id: "t4", from: 50000, rate: 48 },
+    { id: "t1", from: 1000, to: 9999, rate: 50 },
+    { id: "t2", from: 10000, rate: 48 },
+    { id: "t3", from: 30000, rate: 46 },
+    { id: "t4", from: 50000, rate: 44 },
   ],
   targetMargin: 20,
   channels: [

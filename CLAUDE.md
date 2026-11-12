@@ -45,4 +45,3 @@ Naver shopping/brand-store domains are blocked for automated browsing; the user 
 
 GitHub `tinaa-ai/herba-admin` → Vercel project `herba-admin` (https://herba-admin.vercel.app). Pushing `main` deploys production; other branches get preview URLs. Work has been done on `feat/competitor-comparison` and fast-forwarded into `main`. `ADMIN_PASSWORD` is set in Vercel for Production and Preview; changing it requires a redeploy.
 
-`pricing-simulator.html` at the repo root is the user's standalone file and is intentionally left uncommitted.

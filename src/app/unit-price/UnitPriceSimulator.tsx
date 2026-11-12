@@ -28,6 +28,17 @@ function loadState(): SimState | null {
     merged.pharmacyTiers = merged.pharmacyTiers.map((t) =>
       t.id === "t1" && t.to === 5000 ? { ...t, from: t.from === 1 ? 1000 : t.from, to: 9999 } : t,
     );
+    // 공급률 기본값을 55/52/50/48% → 50/48/46/44%로 바꿨어요. 옛 기본값 그대로면 새 값으로
+    const OLD_RATES = [55, 52, 50, 48];
+    if (
+      merged.pharmacyTiers.length === OLD_RATES.length &&
+      merged.pharmacyTiers.every((t, i) => t.rate === OLD_RATES[i])
+    ) {
+      merged.pharmacyTiers = merged.pharmacyTiers.map((t, i) => ({
+        ...t,
+        rate: DEFAULT_STATE.pharmacyTiers[i]?.rate ?? t.rate,
+      }));
+    }
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {
