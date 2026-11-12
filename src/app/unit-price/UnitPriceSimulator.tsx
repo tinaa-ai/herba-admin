@@ -182,11 +182,11 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
   );
 }
 
-function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Tile({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3">
-      <p className="text-xs text-muted">{label}</p>
-      <p className="mt-0.5 text-xl font-semibold tabular-nums">{value}</p>
+    <div className={`rounded-xl border px-4 py-3 ${highlight ? "border-hero-line bg-hero" : "border-line bg-surface"}`}>
+      <p className={`text-xs ${highlight ? "font-medium text-sale" : "text-muted"}`}>{label}</p>
+      <p className={`mt-0.5 text-xl font-semibold tabular-nums ${highlight ? "text-sale" : ""}`}>{value}</p>
       {sub && <p className="mt-0.5 text-[11px] text-muted">{sub}</p>}
     </div>
   );
@@ -273,6 +273,8 @@ export function UnitPriceSimulator() {
   const unitCostTotal = unitItemsTotal + lossCost;
   const fixedTotal = fixedCosts.reduce((s, c) => s + c.amount, 0);
   const sgaPerUnit = quantity > 0 ? fixedTotal / quantity : 0;
+  // 헤르바 마진: 판매가에서 개당 원가·판관비를 뺀 금액 (채널 수수료 빼기 전, VAT 포함 기준)
+  const herbaMargin = sellingPrice - unitCostTotal - sgaPerUnit;
   // 약국 유통·수출은 부가세 뺀 금액으로 봐요. 인건비는 원래 부가세가 없어서 그대로.
   // 둘 다 창고로 한꺼번에 보내서 개별 택배가 없으니 3PL 물류비는 빼요
   const unitCostExVat = unitCostTotal / 1.1;
@@ -324,7 +326,7 @@ export function UnitPriceSimulator() {
         detailSummary={`판매가 ${won(sellingPrice)}원 · 개당 총원가 ${won(unitCostTotal + sgaPerUnit)}원`}
         detail={
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
               <Tile
                 label="제조 공급가 (견적)"
                 value={`${won(supply)}원`}
@@ -344,6 +346,12 @@ export function UnitPriceSimulator() {
                 label="개당 총원가"
                 value={`${won(unitCostTotal + sgaPerUnit)}원`}
                 sub="개당 원가 + 개당 판관비 · 채널 수수료 제외"
+              />
+              <Tile
+                label="헤르바 마진"
+                value={`${won(herbaMargin)}원`}
+                sub={`판매가 ${won(sellingPrice)}원 − 총원가 · ${pct(sellingPrice > 0 ? herbaMargin / sellingPrice : 0)} · 채널 수수료 전`}
+                highlight
               />
             </div>
 
@@ -420,6 +428,15 @@ export function UnitPriceSimulator() {
                       </p>
                       <p className="mt-1 text-[11px] text-muted">
                         채널별 개당 이익은 이 금액으로 계산해요 · 10mL당 {won((sellingPrice / PRODUCT.volumeMl) * 10)}원
+                      </p>
+                      <p className="mt-2 rounded-md bg-surface px-2 py-1.5 text-xs">
+                        헤르바 마진{" "}
+                        <b className="font-semibold text-sale">
+                          {won(herbaMargin)}원 ({pct(sellingPrice > 0 ? herbaMargin / sellingPrice : 0)})
+                        </b>
+                        <span className="block text-[11px] text-muted">
+                          판매가 − 개당 원가 − 개당 판관비, 채널 수수료 빼기 전
+                        </span>
                       </p>
                     </div>
                     <div>
