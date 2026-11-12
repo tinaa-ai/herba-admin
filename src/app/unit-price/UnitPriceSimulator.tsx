@@ -43,6 +43,8 @@ function loadState(): SimState | null {
     // 환율 기본값을 1,400 → 1,340원으로 바꿨어요. 옛 기본값 그대로면 새 값으로
     if (merged.exportSim.fxRate === 1400)
       merged.exportSim = { ...merged.exportSim, fxRate: DEFAULT_STATE.exportSim.fxRate };
+    // 채널 이익은 이제 판매가(기본 20,000원) 기준이라, 예전 정가 대비 상시 할인 10%가 그대로면 0%로 되돌려요
+    merged.channels = merged.channels.map((c) => (c.everyday && c.discount === 10 ? { ...c, discount: 0 } : c));
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {
@@ -237,7 +239,8 @@ export function UnitPriceSimulator() {
       state.channels.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     );
 
-  const { unitCosts, shippingCost, fixedCosts, quantity, price, floorDiscount, targetMargin, channels } = state;
+  const { unitCosts, shippingCost, fixedCosts, quantity, price, sellingPrice, floorDiscount, targetMargin, channels } =
+    state;
   const floorPrice = price * (1 - floorDiscount / 100);
 
   const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
@@ -255,7 +258,7 @@ export function UnitPriceSimulator() {
       channels.map((channel) => {
         const rate = (channel.fee + channel.card) / 100;
         const cogs = unitCostTotal + (channel.shipping ? shippingCost : 0);
-        const sale = price * (1 - channel.discount / 100);
+        const sale = sellingPrice * (1 - channel.discount / 100);
         const fee = sale * rate;
         const profit = sale - fee - cogs - sgaPerUnit;
         const cost = cogs + sgaPerUnit;
@@ -273,7 +276,7 @@ export function UnitPriceSimulator() {
           target: tDenom > 0 ? ceil100(cost / tDenom) : null,
         };
       }),
-    [channels, unitCostTotal, shippingCost, price, sgaPerUnit, targetMargin],
+    [channels, unitCostTotal, shippingCost, sellingPrice, sgaPerUnit, targetMargin],
   );
 
   const belowMoq = quantity > 0 && quantity < QUOTE.containerMoq;
@@ -287,7 +290,7 @@ export function UnitPriceSimulator() {
         sgaPerUnit={sgaPerUnit}
         unitCostExVat={unitCostExVat}
         sgaExVat={sgaExVat}
-        detailSummary={`개당 총원가 ${won(unitCostTotal + sgaPerUnit)}원 · 개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원`}
+        detailSummary={`판매가 ${won(sellingPrice)}원 · 개당 총원가 ${won(unitCostTotal + sgaPerUnit)}원 · 개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원`}
         detail={
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -314,7 +317,7 @@ export function UnitPriceSimulator() {
             </div>
 
             <div className="rounded-2xl border border-line bg-surface p-3">
-              <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 정가와 할인 하한선을 정해요</p>
+              <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 판매가를 정해요</p>
               <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
                 <Card title="개당 원가" aside="VAT 포함" tone="cost">
                   <CostList items={unitCosts} onChange={(v) => set("unitCosts", v)} addLabel="원가 항목 추가" />
@@ -371,29 +374,21 @@ export function UnitPriceSimulator() {
                 <Card title="가격 설정" tone="price">
                   <div className="space-y-3">
                     <div>
-                      <p className="mb-1 text-sm">정가 (VAT 포함)</p>
+                      <p className="mb-1 text-sm">판매가 (VAT 포함)</p>
                       <NumberInput
-                        label="정가"
-                        value={price}
-                        onChange={(v) => set("price", Math.max(0, v))}
+                        label="판매가"
+                        value={sellingPrice}
+                        onChange={(v) => set("sellingPrice", Math.max(0, v))}
                         suffix="원"
                         className="[&_input]:py-2 [&_input]:text-lg [&_input]:font-semibold"
                       />
                       <p className="mt-1 text-[11px] text-muted">
-                        10mL당 {won((price / PRODUCT.volumeMl) * 10)}원 · 채널별 실판매가는 표에서 할인율로 정해요
+                        보수적으로 잡은 실제 판매 가격이에요. 채널별 개당 이익은 이 금액으로 계산해요 · 10mL당{" "}
+                        {won((sellingPrice / PRODUCT.volumeMl) * 10)}원
                       </p>
-                    </div>
-                    <div>
-                      <p className="mb-1 text-sm">최저가 하한선</p>
-                      <NumberInput
-                        label="최저가 하한선 할인율"
-                        value={floorDiscount}
-                        onChange={(v) => set("floorDiscount", Math.min(100, Math.max(0, v)))}
-                        suffix="%"
-                      />
                       <p className="mt-1 text-[11px] text-muted">
-                        정가 대비 최대 할인율 → {won(floorPrice)}원. 실판매가가 이보다 낮은 채널은 표에서 빨간색으로
-                        표시해요
+                        정가 {won(price)}원은 보여주는 숫자예요 (정가 대비{" "}
+                        {price > 0 ? Math.round((1 - sellingPrice / price) * 1000) / 10 : 0}% 낮음)
                       </p>
                     </div>
                     <div>
@@ -448,7 +443,7 @@ export function UnitPriceSimulator() {
             listPrice={price}
           />
         }
-        channelSubtitle={`정가 ${won(price)}원에서 채널별 할인율 반영`}
+        channelSubtitle={`판매가 ${won(sellingPrice)}원 기준 · 채널별 추가 할인율 반영`}
         channelSummary={results
           .filter((r) => r.channel.main)
           .map((r) => `${r.channel.name} ${won(r.profit)}원`)

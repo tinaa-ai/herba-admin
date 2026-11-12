@@ -40,7 +40,7 @@ export function PriceSummary({
   /** 부가세 뺀 개당 원가·판관비 (약국 유통 남는 금액 계산용) */
   unitCostExVat: number;
   sgaExVat: number;
-  /** 펼치면 보이는 정가 계산 디테일 (원가·판관비·가격 설정) */
+  /** 펼치면 보이는 판매가 계산 디테일 (원가·판관비·가격 설정) */
   detail: React.ReactNode;
   detailSummary: React.ReactNode;
   /** 펼치면 보이는 채널별 개당 이익 표 */
@@ -75,7 +75,6 @@ export function PriceSummary({
     setState((s) => ({
       ...s,
       everydayDiscount: v,
-      channels: s.channels.map((c) => (c.everyday ? { ...c, discount: v } : c)),
     }));
   const setTier = (id: string, patch: Partial<PharmacyTier>) =>
     setState((s) => ({ ...s, pharmacyTiers: s.pharmacyTiers.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
@@ -108,8 +107,7 @@ export function PriceSummary({
             suffix="%"
           />
           <p>
-            정가에서 <b className="font-medium text-foreground">{won(price - everydayPrice)}원</b> 할인 · 자사몰·네이버
-            브랜드스토어 할인율도 같이 바뀌어요
+            정가에서 <b className="font-medium text-foreground">{won(price - everydayPrice)}원</b> 할인한 평소 판매가
           </p>
         </Stat>
 
@@ -133,13 +131,13 @@ export function PriceSummary({
           onOrder={(panelOrder) => setState((s) => ({ ...s, panelOrder }))}
           items={{
             "price-detail": {
-              label: "정가 계산 디테일",
+              label: "판매가 계산 디테일",
               render: (handle) => (
                 <Fold
                   handle={handle}
                   id="price-detail"
-                  title="정가 계산 디테일"
-                  subtitle="개당 원가 + 판관비 → 정가·하한선·목표 이익률"
+                  title="판매가 계산 디테일"
+                  subtitle="개당 원가 + 판관비 → 판매가·목표 이익률"
                   summary={detailSummary}
                 >
                   {detail}
@@ -285,7 +283,7 @@ export function PriceSummary({
                         원가·판관비도 부가세를 뺐어요 (VAT 포함 {won(unitCostTotal)}원·{won(sgaPerUnit)}원 → 부가세 없는
                         인건비는 그대로)
                       </li>
-                      <li>판관비는 정가 계산 디테일의 판매 수량으로 나눈 개당 금액이에요</li>
+                      <li>판관비는 판매가 계산 디테일의 판매 수량으로 나눈 개당 금액이에요</li>
                     </ul>
                   </div>
                 </Fold>

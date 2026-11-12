@@ -29,11 +29,11 @@ export type Channel = {
   card: number;
   /** 고객에게 브랜드가 직접 택배를 보내는 채널이면 3PL 물류비를 원가에 넣음 */
   shipping: boolean;
-  /** 정가 대비 상시 할인율 % — 실판매가 = 정가 × (1 − 할인율) */
+  /** 판매가에서 추가로 깎는 할인율 % — 실판매가 = 판매가 × (1 − 할인율) */
   discount: number;
   /** 주력 채널: 표 맨 위에 따로 묶어 보여줌 */
   main?: boolean;
-  /** 상시 할인율을 바꾸면 이 채널 할인율도 같이 바뀜 */
+  /** (예전 필드) 상시 할인율 연동 — 지금은 쓰지 않아요 */
   everyday?: boolean;
 };
 
@@ -70,8 +70,10 @@ export type SimState = {
   shippingCost: number;
   fixedCosts: CostItem[];
   quantity: number;
-  /** 정가 (VAT 포함) */
+  /** 정가 (VAT 포함). 보여주는 숫자이고, 약국 공급률·수출 정가 대비의 기준 */
   price: number;
+  /** 판매가 (VAT 포함). 보수적으로 잡은 실제 판매 가격 — 채널별 이익 계산의 기준 */
+  sellingPrice: number;
   /** 최저가 하한선: 정가 대비 최대 할인율 %. 실판매가가 이 할인가보다 낮으면 경고 */
   floorDiscount: number;
   /** 상시 할인율 % (자사몰·브랜드스토어 기본 판매가) */
@@ -106,6 +108,7 @@ export const DEFAULT_STATE: SimState = {
   ],
   quantity: 10000,
   price: 25000,
+  sellingPrice: 20000,
   floorDiscount: 20,
   everydayDiscount: 10,
   pharmacyTiers: [
@@ -136,13 +139,13 @@ export const DEFAULT_STATE: SimState = {
   },
   targetMargin: 20,
   channels: [
-    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 10, shipping: true, main: true, everyday: true },
+    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 0, shipping: true, main: true, everyday: true },
     {
       id: "naver",
       name: "네이버 브랜드스토어",
       fee: 7,
       card: 0,
-      discount: 10,
+      discount: 0,
       shipping: true,
       main: true,
       everyday: true,
