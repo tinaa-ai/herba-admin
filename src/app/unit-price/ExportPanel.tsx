@@ -133,7 +133,7 @@ export function ExportPanel({
                 onChange={(e) => onChange((s) => ({ ...s, includeSga: e.target.checked }))}
                 className="size-4 accent-[var(--export)]"
               />
-              <span>판관비 개당 {won(sgaExVat)}원 포함</span>
+              <span>판관비 개당 {won(sgaExVat)}원 포함 (3PL 물류비 제외)</span>
             </label>
             <p className="text-[11px] text-muted">2026-11-11 종가 기준 · 미팅 전에 그날 환율로 다시 넣어 주세요</p>
           </div>

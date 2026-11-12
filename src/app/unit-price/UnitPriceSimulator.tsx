@@ -273,10 +273,15 @@ export function UnitPriceSimulator() {
   const unitCostTotal = unitItemsTotal + lossCost;
   const fixedTotal = fixedCosts.reduce((s, c) => s + c.amount, 0);
   const sgaPerUnit = quantity > 0 ? fixedTotal / quantity : 0;
-  // 수출은 영세율이라 원가를 VAT 뺀 금액으로 봐요. 인건비는 원래 부가세가 없어서 그대로
+  // 약국 유통·수출은 부가세 뺀 금액으로 봐요. 인건비는 원래 부가세가 없어서 그대로.
+  // 둘 다 창고로 한꺼번에 보내서 개별 택배가 없으니 3PL 물류비는 빼요
   const unitCostExVat = unitCostTotal / 1.1;
   const sgaExVat =
-    quantity > 0 ? fixedCosts.reduce((s, c) => s + (c.id === "payroll" ? c.amount : c.amount / 1.1), 0) / quantity : 0;
+    quantity > 0
+      ? fixedCosts
+          .filter((c) => c.id !== "3pl")
+          .reduce((s, c) => s + (c.id === "payroll" ? c.amount : c.amount / 1.1), 0) / quantity
+      : 0;
   const exportCalc = makeExportCalc(state.exportSim, unitCostExVat, sgaExVat, price);
 
   const results: ChannelResult[] = useMemo(

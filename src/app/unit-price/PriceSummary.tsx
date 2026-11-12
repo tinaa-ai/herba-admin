@@ -281,7 +281,7 @@ export function PriceSummary({
                   <div className="mt-3 rounded-lg bg-hero px-3 py-2.5 text-xs leading-relaxed">
                     <p className="font-medium underline decoration-sale decoration-2 underline-offset-4">
                       헤르바 개당 남는 금액 = 공급가(VAT 별도) − 제품 원가 {won(unitCostExVat)}원 − 판관비{" "}
-                      {won(sgaExVat)}원 (= 공급가 − {won(cost)}원)
+                      {won(sgaExVat)}원 (= 공급가 − {won(cost)}원) · 판관비는 3PL 물류비 제외
                     </p>
                     <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-muted">
                       <li>
