@@ -72,14 +72,16 @@ export function PriceSummary({
   // 유통사 납품은 대량 입고라 개별 택배비 없이 원가 + 판관비만 들어가요.
   // 남는 금액은 부가세를 뺀 실제 금액: VAT 별도 공급가 − VAT 별도 원가·판관비 (인건비는 원래 부가세 없음)
   const cost = unitCostExVat + sgaExVat;
-  const minRate = price > 0 ? Math.min(1, (cost * VAT) / price) : 0;
+  // 약국 공급률은 판매가(= 상시 할인가) 기준이에요. 약국도 온라인과 같은 가격에 판다고 봐요
+  const base = everydayPrice;
+  const minRate = base > 0 ? Math.min(1, (cost * VAT) / base) : 0;
 
   const calc = (t: PharmacyTier) => {
-    const supply = price * (t.rate / 100); // VAT 포함
+    const supply = base * (t.rate / 100); // VAT 포함
     const profit = supply / VAT - cost; // 부가세 뺀 금액
     const orderQty = t.orderQty ?? t.from;
     const inRange = orderQty >= t.from && (t.to === undefined || orderQty <= t.to);
-    return { supply, supplyEx: supply / VAT, share: price - supply, profit, orderQty, inRange };
+    return { supply, supplyEx: supply / VAT, share: base - supply, profit, orderQty, inRange };
   };
   const first = pharmacyTiers[0];
   const last = pharmacyTiers[pharmacyTiers.length - 1];
@@ -112,7 +114,7 @@ export function PriceSummary({
             suffix="원"
           />
           <p>
-            {PRODUCT.volumeMl}mL · 10mL당 {won((price / PRODUCT.volumeMl) * 10)}원 · 약국 판매 기준
+            {PRODUCT.volumeMl}mL · 10mL당 {won((price / PRODUCT.volumeMl) * 10)}원 · 보여주는 가격
           </p>
         </Stat>
 
@@ -125,7 +127,7 @@ export function PriceSummary({
           />
           <p>
             정가에서 <b className="font-medium text-foreground">{won(price - everydayPrice)}원</b> 할인 · 판매가 계산
-            디테일과 채널별 개당 이익이 이 금액 기준이에요
+            디테일, 약국 유통 공급률, 채널별 개당 이익이 이 금액 기준이에요
           </p>
         </Stat>
 
@@ -181,8 +183,8 @@ export function PriceSummary({
                   }
                 >
                   <p className="mb-2 px-1 text-xs leading-relaxed text-muted">
-                    <b className="font-semibold text-sale">공급률</b> = 정가 {won(price)}원(VAT 포함) 중 헤르바가 받는
-                    비율 · 공급가(VAT 포함) = 정가 × 공급률 → ÷ 1.1 = 공급가(VAT 별도) · 나머지는 유통사와 약국 몫
+                    <b className="font-semibold text-sale">공급률</b> = 판매가 {won(base)}원(VAT 포함) 중 헤르바가 받는
+                    비율 · 공급가(VAT 포함) = 판매가 × 공급률 → ÷ 1.1 = 공급가(VAT 별도) · 나머지는 유통사와 약국 몫
                     <br />
                     <b className="font-semibold text-sale">대량 입고라 택배비 제외</b> ·{" "}
                     <b className="font-semibold text-sale">미팅 때는 VAT 별도 공급가로 제시</b> ·{" "}
@@ -195,18 +197,18 @@ export function PriceSummary({
                           <th className="px-2 py-2 font-normal">주문 수량</th>
                           <th className="w-32 px-2 py-2 text-right font-normal">
                             공급률
-                            <span className="block text-[11px] text-sale">정가(VAT 포함) 기준</span>
+                            <span className="block text-[11px] text-sale">판매가 {won(base)}원 기준</span>
                           </th>
                           <th className="px-2 py-2 text-right font-normal">
                             공급가 (VAT 포함)
-                            <span className="block text-[11px]">= 정가 × 공급률</span>
+                            <span className="block text-[11px]">= 판매가 × 공급률</span>
                           </th>
                           <th className="px-2 py-2 text-right font-normal">
                             공급가 (VAT 별도)
                             <span className="block text-[11px] text-sale">= VAT 포함 ÷ 1.1 · 미팅 제시가</span>
                           </th>
                           <th className="px-2 py-2 text-right font-normal">
-                            유통·약국 몫<span className="block text-[11px]">= 정가 − 공급가(VAT 포함)</span>
+                            유통·약국 몫<span className="block text-[11px]">= 판매가 − 공급가(VAT 포함)</span>
                           </th>
                           <th className="px-2 py-2 text-right font-normal">
                             헤르바 개당 남는 금액
