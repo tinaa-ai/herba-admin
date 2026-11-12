@@ -53,7 +53,6 @@ function GroupTab({ group, pathname }: { group: TabGroup; pathname: string }) {
         className={`flex items-center gap-1 ${tabClass(!!current)}`}
       >
         {group.label}
-        {current && <span className="hidden font-normal text-muted sm:inline">· {current.label}</span>}
         <span aria-hidden className={`text-[10px] text-muted transition-transform ${open ? "rotate-180" : ""}`}>
           ▾
         </span>
