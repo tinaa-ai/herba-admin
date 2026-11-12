@@ -7,7 +7,7 @@ const VAT = 1.1;
 
 function Stat({ label, value, children }: { label: string; value: string; children?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+    <div className="rounded-xl border-2 border-foreground bg-surface px-4 py-3">
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-0.5 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
       <div className="mt-1 space-y-1.5 text-[11px] text-muted">{children}</div>
