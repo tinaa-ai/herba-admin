@@ -189,26 +189,18 @@ export function ExportPanel({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1200px] text-sm">
+        <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-muted">
               <th className="px-2 py-2 font-normal">주문 수량</th>
-              <th className="w-24 px-2 py-2 text-right font-normal">목표 마진</th>
-              <th className="px-2 py-2 text-right font-normal">FOB 단가 (USD)</th>
-              <th className="border-l border-dashed border-line bg-subtle/60 px-2 py-2 text-right font-normal">
-                원화 환산
-                <span className="block text-[11px]">참고</span>
-              </th>
-              <th className="bg-subtle/60 px-2 py-2 text-right font-normal">
-                멕시코 페소
-                <span className="block text-[11px]">참고</span>
-              </th>
-              <th className="border-r border-dashed border-line bg-subtle/60 px-2 py-2 text-right font-normal">
-                일본 엔<span className="block text-[11px]">참고</span>
+              <th className="w-20 px-2 py-2 text-right font-normal">목표 마진</th>
+              <th className="px-2 py-2 text-right font-normal">
+                FOB 단가 (USD)
+                <span className="block text-[11px]">아래 회색은 참고 환산</span>
               </th>
               <th className="px-2 py-2 text-right font-normal">
                 국내 정가 대비
-                <span className="block text-[11px]">정가 {won(listPrice)}원 (VAT 포함)</span>
+                <span className="block text-[11px]">정가 {won(listPrice)}원 기준</span>
               </th>
               <th className="px-2 py-2 text-right font-normal">개당 원가 합계</th>
               <th className="px-2 py-2 text-right font-normal">헤르바 개당 남는 금액</th>
@@ -220,15 +212,15 @@ export function ExportPanel({
               const r = calc(t);
               const loss = r.profit !== null && r.profit < 0;
               return (
-                <tr key={t.id} className="border-b border-line last:border-0">
+                <tr key={t.id} className="border-b border-line align-top last:border-0">
                   <td className="px-2 py-2">
-                    <div className="flex items-center gap-1 text-xs text-muted">
+                    <div className="flex flex-wrap items-center gap-1 text-xs text-muted">
                       <NumberInput
                         label="구간 시작 수량"
                         required
                         value={t.from}
                         onChange={(v) => setTier(t.id, { from: Math.max(0, v) })}
-                        className="w-24"
+                        className="w-20"
                       />
                       {t.to !== undefined ? (
                         <>
@@ -238,9 +230,8 @@ export function ExportPanel({
                             required
                             value={t.to}
                             onChange={(v) => setTier(t.id, { to: Math.max(0, v) })}
-                            className="w-24"
+                            className="w-20"
                           />
-                          개
                         </>
                       ) : (
                         <span className="whitespace-nowrap">개 이상</span>
@@ -255,21 +246,17 @@ export function ExportPanel({
                       suffix="%"
                     />
                   </td>
-                  <td className="px-2 py-2 text-right text-base font-semibold tabular-nums text-export">
-                    {r.fobUsd === null ? <span className="text-sale">불가</span> : usd(r.fobUsd)}
+                  <td className="px-2 py-2 text-right">
+                    <p className="text-base font-semibold tabular-nums text-export">
+                      {r.fobUsd === null ? <span className="text-sale">불가</span> : usd(r.fobUsd)}
+                    </p>
+                    {r.fobUsd !== null && r.fobKrw !== null && (
+                      <p className="mt-0.5 whitespace-nowrap text-[11px] italic tabular-nums text-muted">
+                        참고 {won(r.fobKrw)}원 · {mxn(r.fobUsd * sim.mxnRate)} · {jpy(r.fobUsd * sim.jpyRate)}
+                      </p>
+                    )}
                   </td>
-                  <td className="border-l border-dashed border-line bg-subtle/60 px-2 py-2 text-right text-xs whitespace-nowrap italic tabular-nums text-muted">
-                    {r.fobKrw === null ? "—" : `${won(r.fobKrw)}원`}
-                  </td>
-                  <td className="bg-subtle/60 px-2 py-2 text-right text-xs whitespace-nowrap italic tabular-nums text-muted">
-                    {r.fobUsd === null ? "—" : mxn(r.fobUsd * sim.mxnRate)}
-                  </td>
-                  <td className="border-r border-dashed border-line bg-subtle/60 px-2 py-2 text-right text-xs whitespace-nowrap italic tabular-nums text-muted">
-                    {r.fobUsd === null ? "—" : jpy(r.fobUsd * sim.jpyRate)}
-                  </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-muted">
-                    {r.ofList === null ? "—" : pct(r.ofList)}
-                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums">{r.ofList === null ? "—" : pct(r.ofList)}</td>
                   <td className="px-2 py-2 text-right tabular-nums text-muted">
                     {won(r.cost)}원<span className="block text-[11px]">선적비 개당 {won(r.shipPerUnit)}원 포함</span>
                   </td>
@@ -285,22 +272,17 @@ export function ExportPanel({
                         required
                         value={r.qty}
                         onChange={(v) => setTier(t.id, { orderQty: Math.max(0, v) })}
-                        className="w-24"
+                        className="w-20"
                       />
-                      개 주문 시
+                      개
                     </div>
                     <p className={`mt-1 font-semibold tabular-nums ${loss ? "text-sale" : ""}`}>
                       {r.profit === null ? "—" : `${won(r.profit * r.qty)}원`}
                     </p>
                     {r.fobUsd !== null && (
-                      <p className="text-[11px] tabular-nums text-muted">
-                        주문 금액 {usd(r.fobUsd * r.qty)}
-                        <span className="block italic">
-                          참고 {mxn(r.fobUsd * r.qty * sim.mxnRate)} · {jpy(r.fobUsd * r.qty * sim.jpyRate)}
-                        </span>
-                      </p>
+                      <p className="text-[11px] tabular-nums text-muted">주문 금액 {usd(r.fobUsd * r.qty)}</p>
                     )}
-                    {!r.inRange && <p className="text-[11px] text-warn">이 수량은 {tierLabel(t)} 구간 밖이에요</p>}
+                    {!r.inRange && <p className="text-[11px] text-warn">{tierLabel(t)} 구간 밖 수량</p>}
                   </td>
                 </tr>
               );
@@ -323,8 +305,8 @@ export function ExportPanel({
           </li>
           <li>헤르바 개당 남는 금액 = FOB 단가(원화) − 송금 수수료 − 개당 원가 합계</li>
           <li>
-            국내 정가 대비 = FOB 단가(원화) ÷ 국내 정가 {won(listPrice)}원(VAT 포함). 바이어의 운임·관세·유통 마진이 그
-            위에 붙어요
+            국내 정가 대비 = 수출 단가(원화)가 한국 정가 {won(listPrice)}원(VAT 포함)의 몇 %인지예요. 바이어는 이 위에
+            운임·관세·현지 유통 마진을 붙여 팔아요. 보통 낮을수록 바이어가 받아들이기 쉬워요
           </li>
           <li>원화·페소·엔 환산은 참고용이에요. 거래 단가는 USD예요</li>
         </ul>
