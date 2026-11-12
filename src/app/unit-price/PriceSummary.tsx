@@ -40,6 +40,9 @@ export function PriceSummary({
   sgaPerUnit,
   detail,
   detailSummary,
+  channelTable,
+  channelSubtitle,
+  channelSummary,
 }: {
   state: SimState;
   setState: React.Dispatch<React.SetStateAction<SimState>>;
@@ -48,6 +51,11 @@ export function PriceSummary({
   /** 펼치면 보이는 정가 계산 디테일 (원가·판관비·가격 설정) */
   detail: React.ReactNode;
   detailSummary: React.ReactNode;
+  /** 펼치면 보이는 채널별 개당 이익 표 */
+  channelTable: React.ReactNode;
+  channelSubtitle: string;
+  /** 접혔을 때 보이는 주력 채널 개당 이익 */
+  channelSummary: React.ReactNode;
 }) {
   const { price, everydayDiscount, floorDiscount, pharmacyTiers } = state;
   const everydayPrice = price * (1 - everydayDiscount / 100);
@@ -255,6 +263,9 @@ export function PriceSummary({
             <b className="font-medium text-foreground">{pct(minRate)}</b> 밑으로 내려가면 손해예요. 판관비는 정가 계산
             디테일의 판매 수량 기준이에요.
           </p>
+        </Fold>
+        <Fold id="channel-table" title="채널별 개당 이익" subtitle={channelSubtitle} summary={channelSummary}>
+          {channelTable}
         </Fold>
       </div>
     </section>

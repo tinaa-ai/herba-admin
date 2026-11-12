@@ -410,182 +410,186 @@ export function UnitPriceSimulator() {
             </div>
           </div>
         }
-      />
-
-      <section className="rounded-xl border border-line bg-surface">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 pt-4">
-          <h2 className="text-sm font-semibold">채널별 개당 이익 · 정가 {won(price)}원에서 채널별 할인율 반영</h2>
-          <span className="text-xs text-muted">수수료율은 예상치예요. 칸을 눌러 고치고, ★로 주력 채널을 정해요</span>
-        </div>
-        <div className="overflow-x-auto px-2 pb-2 pt-3">
-          <table className="w-full min-w-[1200px] text-sm">
-            <thead>
-              <tr className="border-b border-line text-left text-xs text-muted">
-                <th className="px-2 py-2 font-normal">채널</th>
-                <th className="w-24 px-2 py-2 text-right font-normal">할인율</th>
-                <th className="px-2 py-2 text-right font-normal">실판매가</th>
-                <th className="w-24 px-2 py-2 text-right font-normal">판매 수수료</th>
-                <th className="w-24 px-2 py-2 text-right font-normal">결제 수수료</th>
-                <th className="px-2 py-2 text-center font-normal">개별 배송</th>
-                <th className="px-2 py-2 text-right font-normal">수수료</th>
-                <th className="px-2 py-2 text-right font-normal">개당 이익</th>
-                <th className="px-2 py-2 text-right font-normal">이익률</th>
-                <th className="w-36 px-2 py-2 font-normal">판매가 구성</th>
-                <th className="px-2 py-2 text-right font-normal">손익분기가</th>
-                <th className="px-2 py-2 text-right font-normal">목표가 ({targetMargin}%)</th>
-                <th className="px-2 py-2 text-right font-normal">{won(quantity)}개 이익</th>
-                <th className="w-6" />
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { label: "주력 채널", rows: results.filter((r) => r.channel.main) },
-                { label: "기타 채널", rows: results.filter((r) => !r.channel.main) },
-              ].map((group) => [
-                group.rows.length > 0 && (
-                  <tr key={group.label} className="border-b border-line bg-subtle/60">
-                    <td colSpan={14} className="px-3 py-1.5 text-xs font-medium text-muted">
-                      {group.label} <span className="font-normal">· {group.rows.length}곳</span>
-                    </td>
+        channelSubtitle={`정가 ${won(price)}원에서 채널별 할인율 반영`}
+        channelSummary={results
+          .filter((r) => r.channel.main)
+          .map((r) => `${r.channel.name} ${won(r.profit)}원`)
+          .join(" · ")}
+        channelTable={
+          <>
+            <p className="px-1 text-xs text-muted">수수료율은 예상치예요. 칸을 눌러 고치고, ★로 주력 채널을 정해요</p>
+            <div className="overflow-x-auto pt-2">
+              <table className="w-full min-w-[1200px] text-sm">
+                <thead>
+                  <tr className="border-b border-line text-left text-xs text-muted">
+                    <th className="px-2 py-2 font-normal">채널</th>
+                    <th className="w-24 px-2 py-2 text-right font-normal">할인율</th>
+                    <th className="px-2 py-2 text-right font-normal">실판매가</th>
+                    <th className="w-24 px-2 py-2 text-right font-normal">판매 수수료</th>
+                    <th className="w-24 px-2 py-2 text-right font-normal">결제 수수료</th>
+                    <th className="px-2 py-2 text-center font-normal">개별 배송</th>
+                    <th className="px-2 py-2 text-right font-normal">수수료</th>
+                    <th className="px-2 py-2 text-right font-normal">개당 이익</th>
+                    <th className="px-2 py-2 text-right font-normal">이익률</th>
+                    <th className="w-36 px-2 py-2 font-normal">판매가 구성</th>
+                    <th className="px-2 py-2 text-right font-normal">손익분기가</th>
+                    <th className="px-2 py-2 text-right font-normal">목표가 ({targetMargin}%)</th>
+                    <th className="px-2 py-2 text-right font-normal">{won(quantity)}개 이익</th>
+                    <th className="w-6" />
                   </tr>
-                ),
-                ...group.rows.map((r) => {
-                  const c = r.channel;
-                  const loss = r.profit < 0;
-                  const underTarget = r.target !== null && r.sale < r.target;
-                  const belowFloor = r.sale < floorPrice;
-                  return (
-                    <tr key={c.id} className="group border-b border-line last:border-0">
-                      <td className="px-2 py-1.5">
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            aria-pressed={!!c.main}
-                            aria-label={c.main ? `${c.name} 주력 채널에서 빼기` : `${c.name} 주력 채널로 올리기`}
-                            title={c.main ? "주력 채널에서 빼기" : "주력 채널로 올리기"}
-                            onClick={() => updateChannel(c.id, { main: !c.main })}
-                            className={`shrink-0 text-base leading-none ${c.main ? "text-best" : "text-line hover:text-best"}`}
+                </thead>
+                <tbody>
+                  {[
+                    { label: "주력 채널", rows: results.filter((r) => r.channel.main) },
+                    { label: "기타 채널", rows: results.filter((r) => !r.channel.main) },
+                  ].map((group) => [
+                    group.rows.length > 0 && (
+                      <tr key={group.label} className="border-b border-line bg-subtle/60">
+                        <td colSpan={14} className="px-3 py-1.5 text-xs font-medium text-muted">
+                          {group.label} <span className="font-normal">· {group.rows.length}곳</span>
+                        </td>
+                      </tr>
+                    ),
+                    ...group.rows.map((r) => {
+                      const c = r.channel;
+                      const loss = r.profit < 0;
+                      const underTarget = r.target !== null && r.sale < r.target;
+                      const belowFloor = r.sale < floorPrice;
+                      return (
+                        <tr key={c.id} className="group border-b border-line last:border-0">
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                aria-pressed={!!c.main}
+                                aria-label={c.main ? `${c.name} 주력 채널에서 빼기` : `${c.name} 주력 채널로 올리기`}
+                                title={c.main ? "주력 채널에서 빼기" : "주력 채널로 올리기"}
+                                onClick={() => updateChannel(c.id, { main: !c.main })}
+                                className={`shrink-0 text-base leading-none ${c.main ? "text-best" : "text-line hover:text-best"}`}
+                              >
+                                ★
+                              </button>
+                              <input
+                                value={c.name}
+                                aria-label="채널 이름"
+                                onChange={(e) => updateChannel(c.id, { name: e.target.value })}
+                                className={`w-full min-w-28 rounded px-1 py-1 outline-none hover:bg-subtle focus:bg-subtle ${c.main ? "font-medium" : ""}`}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <NumberInput
+                              label={`${c.name} 할인율`}
+                              value={c.discount}
+                              onChange={(v) => updateChannel(c.id, { discount: Math.min(100, Math.max(0, v)) })}
+                              suffix="%"
+                            />
+                          </td>
+                          <td
+                            className={`px-2 py-1.5 text-right tabular-nums ${belowFloor ? "font-medium text-sale" : "font-medium"}`}
+                            title={belowFloor ? `최저가 하한선 ${won(floorPrice)}원보다 낮아요` : undefined}
                           >
-                            ★
-                          </button>
-                          <input
-                            value={c.name}
-                            aria-label="채널 이름"
-                            onChange={(e) => updateChannel(c.id, { name: e.target.value })}
-                            className={`w-full min-w-28 rounded px-1 py-1 outline-none hover:bg-subtle focus:bg-subtle ${c.main ? "font-medium" : ""}`}
-                          />
-                        </div>
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <NumberInput
-                          label={`${c.name} 할인율`}
-                          value={c.discount}
-                          onChange={(v) => updateChannel(c.id, { discount: Math.min(100, Math.max(0, v)) })}
-                          suffix="%"
-                        />
-                      </td>
-                      <td
-                        className={`px-2 py-1.5 text-right tabular-nums ${belowFloor ? "font-medium text-sale" : "font-medium"}`}
-                        title={belowFloor ? `최저가 하한선 ${won(floorPrice)}원보다 낮아요` : undefined}
-                      >
-                        {won(r.sale)}
-                        {belowFloor && <span className="block text-[10px] font-normal">하한선 아래</span>}
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <NumberInput
-                          label={`${c.name} 판매 수수료`}
-                          value={c.fee}
-                          onChange={(v) => updateChannel(c.id, { fee: Math.max(0, v) })}
-                          suffix="%"
-                        />
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <NumberInput
-                          label={`${c.name} 결제 수수료`}
-                          value={c.card}
-                          onChange={(v) => updateChannel(c.id, { card: Math.max(0, v) })}
-                          suffix="%"
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 text-center">
-                        <input
-                          type="checkbox"
-                          aria-label={`${c.name} 개별 배송`}
-                          checked={c.shipping}
-                          onChange={(e) => updateChannel(c.id, { shipping: e.target.checked })}
-                          className="size-4 accent-[var(--accent)]"
-                        />
-                      </td>
-                      <td className="px-2 py-1.5 text-right tabular-nums text-muted">{won(r.fee)}</td>
-                      <td
-                        className={`px-2 py-1.5 text-right font-semibold tabular-nums ${loss ? "text-sale" : "text-accent"}`}
-                      >
-                        {won(r.profit)}
-                      </td>
-                      <td className={`px-2 py-1.5 text-right tabular-nums ${loss ? "text-sale" : ""}`}>
-                        {pct(r.margin)}
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <PriceBar r={r} />
-                      </td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">
-                        {r.breakEven === null ? <span className="text-sale">불가</span> : won(r.breakEven)}
-                      </td>
-                      <td
-                        className={`px-2 py-1.5 text-right tabular-nums ${underTarget ? "font-medium text-warn" : ""}`}
-                      >
-                        {r.target === null ? <span className="text-sale">불가</span> : won(r.target)}
-                      </td>
-                      <td className={`px-2 py-1.5 text-right tabular-nums ${loss ? "text-sale" : "text-muted"}`}>
-                        {won(r.profit * quantity)}
-                      </td>
-                      <td className="px-1 py-1.5">
-                        <button
-                          type="button"
-                          aria-label={`${c.name} 삭제`}
-                          onClick={() =>
-                            set(
-                              "channels",
-                              channels.filter((x) => x.id !== c.id),
-                            )
-                          }
-                          className="text-muted opacity-40 hover:text-sale hover:opacity-100 group-hover:opacity-100"
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                }),
-              ])}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-xs text-muted">
-          <button
-            type="button"
-            onClick={() =>
-              set("channels", [
-                ...channels,
-                {
-                  id: newId(),
-                  name: "새 채널",
-                  discount: 0,
-                  fee: 0,
-                  card: 0,
-                  shipping: true,
-                },
-              ])
-            }
-            className="hover:text-foreground"
-          >
-            + 채널 추가
-          </button>
-          <span>
-            목표가가 <span className="font-medium text-warn">주황색</span>이면 지금 실판매가로는 목표 이익률에 못 미쳐요
-          </span>
-        </div>
-      </section>
+                            {won(r.sale)}
+                            {belowFloor && <span className="block text-[10px] font-normal">하한선 아래</span>}
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <NumberInput
+                              label={`${c.name} 판매 수수료`}
+                              value={c.fee}
+                              onChange={(v) => updateChannel(c.id, { fee: Math.max(0, v) })}
+                              suffix="%"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <NumberInput
+                              label={`${c.name} 결제 수수료`}
+                              value={c.card}
+                              onChange={(v) => updateChannel(c.id, { card: Math.max(0, v) })}
+                              suffix="%"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 text-center">
+                            <input
+                              type="checkbox"
+                              aria-label={`${c.name} 개별 배송`}
+                              checked={c.shipping}
+                              onChange={(e) => updateChannel(c.id, { shipping: e.target.checked })}
+                              className="size-4 accent-[var(--accent)]"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 text-right tabular-nums text-muted">{won(r.fee)}</td>
+                          <td
+                            className={`px-2 py-1.5 text-right font-semibold tabular-nums ${loss ? "text-sale" : "text-accent"}`}
+                          >
+                            {won(r.profit)}
+                          </td>
+                          <td className={`px-2 py-1.5 text-right tabular-nums ${loss ? "text-sale" : ""}`}>
+                            {pct(r.margin)}
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <PriceBar r={r} />
+                          </td>
+                          <td className="px-2 py-1.5 text-right tabular-nums">
+                            {r.breakEven === null ? <span className="text-sale">불가</span> : won(r.breakEven)}
+                          </td>
+                          <td
+                            className={`px-2 py-1.5 text-right tabular-nums ${underTarget ? "font-medium text-warn" : ""}`}
+                          >
+                            {r.target === null ? <span className="text-sale">불가</span> : won(r.target)}
+                          </td>
+                          <td className={`px-2 py-1.5 text-right tabular-nums ${loss ? "text-sale" : "text-muted"}`}>
+                            {won(r.profit * quantity)}
+                          </td>
+                          <td className="px-1 py-1.5">
+                            <button
+                              type="button"
+                              aria-label={`${c.name} 삭제`}
+                              onClick={() =>
+                                set(
+                                  "channels",
+                                  channels.filter((x) => x.id !== c.id),
+                                )
+                              }
+                              className="text-muted opacity-40 hover:text-sale hover:opacity-100 group-hover:opacity-100"
+                            >
+                              ×
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    }),
+                  ])}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-xs text-muted">
+              <button
+                type="button"
+                onClick={() =>
+                  set("channels", [
+                    ...channels,
+                    {
+                      id: newId(),
+                      name: "새 채널",
+                      discount: 0,
+                      fee: 0,
+                      card: 0,
+                      shipping: true,
+                    },
+                  ])
+                }
+                className="hover:text-foreground"
+              >
+                + 채널 추가
+              </button>
+              <span>
+                목표가가 <span className="font-medium text-warn">주황색</span>이면 지금 실판매가로는 목표 이익률에 못
+                미쳐요
+              </span>
+            </div>
+          </>
+        }
+      />
     </div>
   );
 }
