@@ -16,6 +16,10 @@ function loadState(): SimState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SimState>;
     const merged = { ...DEFAULT_STATE, ...parsed };
+    // 정가 기본값이 24,900 → 25,000으로 바뀌었어요. 손대지 않은 옛 기본값이면 새 값으로 바꿔요
+    if (merged.price === 24900) merged.price = DEFAULT_STATE.price;
+    // 하한선을 금액(floorPrice)에서 할인율(floorDiscount)로 바꿨어요. 옛 저장값의 floorPrice는 버려요
+    delete (merged as Partial<SimState> & { floorPrice?: number }).floorPrice;
     // 주력 채널 표시가 생기기 전에 저장된 값이면 기본값의 주력 여부와 새 이름을 이어받아요
     merged.channels = merged.channels.map((c) => {
       const def = DEFAULT_STATE.channels.find((d) => d.id === c.id);
@@ -209,7 +213,8 @@ export function UnitPriceSimulator() {
       state.channels.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     );
 
-  const { unitCosts, shippingCost, fixedCosts, quantity, price, floorPrice, targetMargin, channels } = state;
+  const { unitCosts, shippingCost, fixedCosts, quantity, price, floorDiscount, targetMargin, channels } = state;
+  const floorPrice = price * (1 - floorDiscount / 100);
 
   const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
   const unitCostTotal = unitCosts.reduce((s, c) => s + c.amount, 0);
@@ -340,14 +345,13 @@ export function UnitPriceSimulator() {
               <div>
                 <p className="mb-1 text-sm">최저가 하한선</p>
                 <NumberInput
-                  label="최저가 하한선"
-                  value={floorPrice}
-                  onChange={(v) => set("floorPrice", Math.max(0, v))}
-                  suffix="원"
+                  label="최저가 하한선 할인율"
+                  value={floorDiscount}
+                  onChange={(v) => set("floorDiscount", Math.min(100, Math.max(0, v)))}
+                  suffix="%"
                 />
                 <p className="mt-1 text-[11px] text-muted">
-                  정가 대비 {price > 0 ? Math.round((1 - floorPrice / price) * 1000) / 10 : 0}% 할인. 실판매가가 이보다
-                  낮은 채널은 표에서 빨간색으로 표시해요
+                  정가 대비 최대 할인율 → {won(floorPrice)}원. 실판매가가 이보다 낮은 채널은 표에서 빨간색으로 표시해요
                 </p>
               </div>
               <div>

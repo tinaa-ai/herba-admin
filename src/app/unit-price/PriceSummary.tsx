@@ -38,9 +38,9 @@ export function PriceSummary({
   unitCostTotal: number;
   sgaPerUnit: number;
 }) {
-  const { price, everydayDiscount, floorPrice, distributorTiers, distributorPlans, selectedPlan } = state;
+  const { price, everydayDiscount, floorDiscount, distributorTiers, distributorPlans, selectedPlan } = state;
   const everydayPrice = price * (1 - everydayDiscount / 100);
-  const offList = (p: number) => (price > 0 ? 1 - p / price : 0);
+  const floorPrice = price * (1 - floorDiscount / 100);
 
   // 유통사 납품은 대량 입고라 개별 택배비 없이 원가 + 판관비만 들어가요
   const cost = unitCostTotal + sgaPerUnit;
@@ -103,12 +103,15 @@ export function PriceSummary({
 
         <Stat label="최저가 하한선" value={`${won(floorPrice)}원`}>
           <NumberInput
-            label="최저가 하한선"
-            value={floorPrice}
-            onChange={(v) => setState((s) => ({ ...s, floorPrice: Math.max(0, v) }))}
-            suffix="원"
+            label="최저가 하한선 할인율"
+            value={floorDiscount}
+            onChange={(v) => setState((s) => ({ ...s, floorDiscount: Math.min(100, Math.max(0, v)) }))}
+            suffix="%"
           />
-          <p>정가 대비 {pct(offList(floorPrice))} 할인 · 쿠폰·행사도 이 밑으로는 안 내려가요</p>
+          <p>
+            정가에서 최대 <b className="font-medium text-foreground">{won(price - floorPrice)}원</b> 할인 · 쿠폰·행사도
+            이 밑으로는 안 내려가요
+          </p>
         </Stat>
 
         <Stat label={`약국 유통사 제안가 · ${plan?.name ?? ""}`} value={`${won(proposal)}원`} highlight>

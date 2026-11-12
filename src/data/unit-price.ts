@@ -47,8 +47,8 @@ export type SimState = {
   quantity: number;
   /** 정가 (VAT 포함) */
   price: number;
-  /** 최저가 하한선: 실판매가가 이보다 낮으면 경고 */
-  floorPrice: number;
+  /** 최저가 하한선: 정가 대비 최대 할인율 %. 실판매가가 이 할인가보다 낮으면 경고 */
+  floorDiscount: number;
   /** 상시 할인율 % (자사몰·브랜드스토어 기본 판매가) */
   everydayDiscount: number;
   /** 약국 유통사(매입 유통) 수량 구간 */
@@ -80,8 +80,8 @@ export const DEFAULT_STATE: SimState = {
     { id: "etc", label: "기타 운영관리비", amount: 11000000 },
   ],
   quantity: 10000,
-  price: 24900,
-  floorPrice: 19900,
+  price: 25000,
+  floorDiscount: 20,
   everydayDiscount: 10,
   distributorTiers: [1000, 3000, 5000, 10000, 30000, 50000],
   distributorPlans: [
