@@ -23,6 +23,7 @@ function loadState(): SimState | null {
       return {
         ...c,
         main: c.main ?? def?.main ?? false,
+        discount: c.discount ?? def?.discount ?? 0,
         name: c.id === "naver" && c.name === "네이버 스마트스토어" ? (def?.name ?? c.name) : c.name,
       };
     });
@@ -182,6 +183,7 @@ function Tile({ label, value, sub }: { label: string; value: string; sub?: strin
 
 type ChannelResult = {
   channel: Channel;
+  sale: number;
   fee: number;
   cogs: number;
   sga: number;
@@ -197,7 +199,8 @@ const SEGMENTS = [
   { key: "sga", label: "판관비", className: "bg-seg-sga" },
 ] as const;
 
-function PriceBar({ r, price }: { r: ChannelResult; price: number }) {
+function PriceBar({ r }: { r: ChannelResult }) {
+  const price = r.sale;
   const costs = r.fee + r.cogs + r.sga;
   const base = Math.max(price, costs, 1);
   const w = (n: number) => `${(Math.max(n, 0) / base) * 100}%`;
@@ -211,7 +214,7 @@ function PriceBar({ r, price }: { r: ChannelResult; price: number }) {
       ))}
       {r.profit > 0 && <div className="bg-accent" style={{ width: w(r.profit) }} />}
       {r.profit < 0 && (
-        <div className="absolute inset-y-0 w-0.5 bg-sale" style={{ left: w(price) }} aria-label="소비자가 위치" />
+        <div className="absolute inset-y-0 w-0.5 bg-sale" style={{ left: w(price) }} aria-label="판매가 위치" />
       )}
     </div>
   );
@@ -245,7 +248,7 @@ export function UnitPriceSimulator() {
       state.channels.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     );
 
-  const { unitCosts, shippingCost, fixedCosts, quantity, price, targetMargin, channels } = state;
+  const { unitCosts, shippingCost, fixedCosts, quantity, price, floorPrice, targetMargin, channels } = state;
 
   const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
   const unitCostTotal = unitCosts.reduce((s, c) => s + c.amount, 0);
@@ -257,18 +260,20 @@ export function UnitPriceSimulator() {
       channels.map((channel) => {
         const rate = (channel.fee + channel.card) / 100;
         const cogs = unitCostTotal + (channel.shipping ? shippingCost : 0);
-        const fee = price * rate;
-        const profit = price - fee - cogs - sgaPerUnit;
+        const sale = price * (1 - channel.discount / 100);
+        const fee = sale * rate;
+        const profit = sale - fee - cogs - sgaPerUnit;
         const cost = cogs + sgaPerUnit;
         const beDenom = 1 - rate;
         const tDenom = 1 - targetMargin / 100 - rate;
         return {
           channel,
+          sale,
           fee,
           cogs,
           sga: sgaPerUnit,
           profit,
-          margin: price > 0 ? profit / price : 0,
+          margin: sale > 0 ? profit / sale : 0,
           breakEven: beDenom > 0 ? ceil100(cost / beDenom) : null,
           target: tDenom > 0 ? ceil100(cost / tDenom) : null,
         };
@@ -300,7 +305,7 @@ export function UnitPriceSimulator() {
       </div>
 
       <div className="rounded-2xl border border-line bg-surface p-3">
-        <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 소비자가를 정해요</p>
+        <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 정가와 할인 하한선을 정해요</p>
         <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
           <Card title="개당 원가" aside="VAT 포함" tone="cost">
             <CostList items={unitCosts} onChange={(v) => set("unitCosts", v)} addLabel="원가 항목 추가" />
@@ -357,15 +362,30 @@ export function UnitPriceSimulator() {
           <Card title="가격 설정" tone="price">
             <div className="space-y-3">
               <div>
-                <p className="mb-1 text-sm">소비자가 (VAT 포함)</p>
+                <p className="mb-1 text-sm">정가 (VAT 포함)</p>
                 <NumberInput
-                  label="소비자가"
+                  label="정가"
                   value={price}
                   onChange={(v) => set("price", Math.max(0, v))}
                   suffix="원"
                   className="[&_input]:py-2 [&_input]:text-lg [&_input]:font-semibold"
                 />
-                <p className="mt-1 text-[11px] text-muted">10mL당 {won((price / PRODUCT.volumeMl) * 10)}원</p>
+                <p className="mt-1 text-[11px] text-muted">
+                  10mL당 {won((price / PRODUCT.volumeMl) * 10)}원 · 채널별 실판매가는 표에서 할인율로 정해요
+                </p>
+              </div>
+              <div>
+                <p className="mb-1 text-sm">최저가 하한선</p>
+                <NumberInput
+                  label="최저가 하한선"
+                  value={floorPrice}
+                  onChange={(v) => set("floorPrice", Math.max(0, v))}
+                  suffix="원"
+                />
+                <p className="mt-1 text-[11px] text-muted">
+                  정가 대비 {price > 0 ? Math.round((1 - floorPrice / price) * 1000) / 10 : 0}% 할인. 실판매가가 이보다
+                  낮은 채널은 표에서 빨간색으로 표시해요
+                </p>
               </div>
               <div>
                 <p className="mb-1 text-sm">목표 이익률</p>
@@ -375,10 +395,10 @@ export function UnitPriceSimulator() {
                   onChange={(v) => set("targetMargin", Math.min(99, Math.max(0, v)))}
                   suffix="%"
                 />
-                <p className="mt-1 text-[11px] text-muted">소비자가 대비. 채널 표의 &lsquo;목표가&rsquo; 계산에 써요</p>
+                <p className="mt-1 text-[11px] text-muted">실판매가 대비. 채널 표의 &lsquo;목표가&rsquo; 계산에 써요</p>
               </div>
               <div className="border-t border-line pt-3 text-[11px] leading-relaxed text-muted">
-                <p className="mb-1.5 font-medium text-foreground">소비자가 구성</p>
+                <p className="mb-1.5 font-medium text-foreground">판매가 구성</p>
                 <ul className="flex flex-wrap gap-x-3 gap-y-1">
                   {SEGMENTS.map((s) => (
                     <li key={s.key} className="flex items-center gap-1">
@@ -408,21 +428,23 @@ export function UnitPriceSimulator() {
 
       <section className="rounded-xl border border-line bg-surface">
         <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 pt-4">
-          <h2 className="text-sm font-semibold">채널별 개당 이익 · 소비자가 {won(price)}원 기준</h2>
+          <h2 className="text-sm font-semibold">채널별 개당 이익 · 정가 {won(price)}원에서 채널별 할인율 반영</h2>
           <span className="text-xs text-muted">수수료율은 예상치예요. 칸을 눌러 고치고, ★로 주력 채널을 정해요</span>
         </div>
         <div className="overflow-x-auto px-2 pb-2 pt-3">
-          <table className="w-full min-w-[1040px] text-sm">
+          <table className="w-full min-w-[1200px] text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs text-muted">
                 <th className="px-2 py-2 font-normal">채널</th>
+                <th className="w-24 px-2 py-2 text-right font-normal">할인율</th>
+                <th className="px-2 py-2 text-right font-normal">실판매가</th>
                 <th className="w-24 px-2 py-2 text-right font-normal">판매 수수료</th>
                 <th className="w-24 px-2 py-2 text-right font-normal">결제 수수료</th>
                 <th className="px-2 py-2 text-center font-normal">개별 배송</th>
                 <th className="px-2 py-2 text-right font-normal">수수료</th>
                 <th className="px-2 py-2 text-right font-normal">개당 이익</th>
                 <th className="px-2 py-2 text-right font-normal">이익률</th>
-                <th className="w-36 px-2 py-2 font-normal">소비자가 구성</th>
+                <th className="w-36 px-2 py-2 font-normal">판매가 구성</th>
                 <th className="px-2 py-2 text-right font-normal">손익분기가</th>
                 <th className="px-2 py-2 text-right font-normal">목표가 ({targetMargin}%)</th>
                 <th className="px-2 py-2 text-right font-normal">{won(quantity)}개 이익</th>
@@ -436,7 +458,7 @@ export function UnitPriceSimulator() {
               ].map((group) => [
                 group.rows.length > 0 && (
                   <tr key={group.label} className="border-b border-line bg-subtle/60">
-                    <td colSpan={12} className="px-3 py-1.5 text-xs font-medium text-muted">
+                    <td colSpan={14} className="px-3 py-1.5 text-xs font-medium text-muted">
                       {group.label} <span className="font-normal">· {group.rows.length}곳</span>
                     </td>
                   </tr>
@@ -444,7 +466,8 @@ export function UnitPriceSimulator() {
                 ...group.rows.map((r) => {
                   const c = r.channel;
                   const loss = r.profit < 0;
-                  const underTarget = r.target !== null && price < r.target;
+                  const underTarget = r.target !== null && r.sale < r.target;
+                  const belowFloor = r.sale < floorPrice;
                   return (
                     <tr key={c.id} className="group border-b border-line last:border-0">
                       <td className="px-2 py-1.5">
@@ -466,6 +489,21 @@ export function UnitPriceSimulator() {
                             className={`w-full min-w-28 rounded px-1 py-1 outline-none hover:bg-subtle focus:bg-subtle ${c.main ? "font-medium" : ""}`}
                           />
                         </div>
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <NumberInput
+                          label={`${c.name} 할인율`}
+                          value={c.discount}
+                          onChange={(v) => updateChannel(c.id, { discount: Math.min(100, Math.max(0, v)) })}
+                          suffix="%"
+                        />
+                      </td>
+                      <td
+                        className={`px-2 py-1.5 text-right tabular-nums ${belowFloor ? "font-medium text-sale" : "font-medium"}`}
+                        title={belowFloor ? `최저가 하한선 ${won(floorPrice)}원보다 낮아요` : undefined}
+                      >
+                        {won(r.sale)}
+                        {belowFloor && <span className="block text-[10px] font-normal">하한선 아래</span>}
                       </td>
                       <td className="px-2 py-1.5">
                         <NumberInput
@@ -502,7 +540,7 @@ export function UnitPriceSimulator() {
                         {pct(r.margin)}
                       </td>
                       <td className="px-2 py-1.5">
-                        <PriceBar r={r} price={price} />
+                        <PriceBar r={r} />
                       </td>
                       <td className="px-2 py-1.5 text-right tabular-nums">
                         {r.breakEven === null ? <span className="text-sale">불가</span> : won(r.breakEven)}
@@ -546,6 +584,7 @@ export function UnitPriceSimulator() {
                 {
                   id: newId(),
                   name: "새 채널",
+                  discount: 0,
                   fee: 0,
                   card: 0,
                   shipping: true,
@@ -557,7 +596,7 @@ export function UnitPriceSimulator() {
             + 채널 추가
           </button>
           <span>
-            목표가가 <span className="font-medium text-warn">주황색</span>이면 지금 소비자가로는 목표 이익률에 못 미쳐요
+            목표가가 <span className="font-medium text-warn">주황색</span>이면 지금 실판매가로는 목표 이익률에 못 미쳐요
           </span>
         </div>
       </section>
