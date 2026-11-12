@@ -105,7 +105,7 @@ export function ExportPanel({
         USD, 센트 단위로 올림
       </p>
 
-      <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-4 grid gap-3 lg:grid-cols-3">
         <div className="rounded-lg border border-export-line bg-export-soft p-3">
           <p className="mb-2 text-sm font-semibold text-export">기본 설정</p>
           <div className="space-y-1.5 text-sm">
@@ -117,6 +117,32 @@ export function ExportPanel({
                 value={sim.fxRate}
                 onChange={(v) => onChange((s) => ({ ...s, fxRate: Math.max(0, v) }))}
                 suffix="원/$"
+                className="w-32"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex-1">
+                멕시코 페소 <span className="text-[11px] text-muted">참고</span>
+              </span>
+              <NumberInput
+                label="1달러당 멕시코 페소"
+                required
+                value={sim.mxnRate}
+                onChange={(v) => onChange((s) => ({ ...s, mxnRate: Math.max(0, v) }))}
+                suffix="MXN/$"
+                className="w-32"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex-1">
+                일본 엔 <span className="text-[11px] text-muted">참고</span>
+              </span>
+              <NumberInput
+                label="1달러당 일본 엔"
+                required
+                value={sim.jpyRate}
+                onChange={(v) => onChange((s) => ({ ...s, jpyRate: Math.max(0, v) }))}
+                suffix="¥/$"
                 className="w-32"
               />
             </div>
@@ -139,7 +165,9 @@ export function ExportPanel({
               />
               <span>판관비 개당 {won(sgaExVat)}원 포함 (3PL 물류비 제외)</span>
             </label>
-            <p className="text-[11px] text-muted">2026-11-12 기준 · 미팅 전에 그날 환율로 다시 넣어 주세요</p>
+            <p className="text-[11px] text-muted">
+              원화 11-12 · 페소 11-11 · 엔 11-12 기준 · 미팅 전에 그날 환율로 다시 넣어 주세요
+            </p>
           </div>
         </div>
         <div className="rounded-lg border border-export-line bg-export-soft p-3">
@@ -158,60 +186,6 @@ export function ExportPanel({
           <ItemInputs items={sim.unitExtras} onChange={(v) => onChange((s) => ({ ...s, unitExtras: v }))} suffix="원" />
           <p className="mt-2 text-[11px] text-muted">개당 {won(extras)}원</p>
         </div>
-        <div className="rounded-lg border border-export-line bg-export-soft p-3">
-          <p className="mb-2 text-sm font-semibold text-export">환율 계산</p>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="flex-1">멕시코 페소</span>
-              <NumberInput
-                label="1달러당 멕시코 페소"
-                required
-                value={sim.mxnRate}
-                onChange={(v) => onChange((s) => ({ ...s, mxnRate: Math.max(0, v) }))}
-                suffix="MXN/$"
-                className="w-32"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="flex-1">일본 엔</span>
-              <NumberInput
-                label="1달러당 일본 엔"
-                required
-                value={sim.jpyRate}
-                onChange={(v) => onChange((s) => ({ ...s, jpyRate: Math.max(0, v) }))}
-                suffix="¥/$"
-                className="w-32"
-              />
-            </div>
-            <div className="mt-2 border-t border-export-line pt-2">
-              <div className="flex items-center gap-2">
-                <span className="flex-1">계산할 금액</span>
-                <NumberInput
-                  label="계산할 달러 금액"
-                  value={sim.calcUsd}
-                  onChange={(v) => onChange((s) => ({ ...s, calcUsd: Math.max(0, v) }))}
-                  suffix="$"
-                  className="w-32"
-                />
-              </div>
-              <ul className="mt-1.5 space-y-0.5 text-right text-xs tabular-nums">
-                <li>
-                  <span className="text-muted">원화 </span>
-                  <b className="font-semibold">{won(sim.calcUsd * sim.fxRate)}원</b>
-                </li>
-                <li>
-                  <span className="text-muted">멕시코 페소 </span>
-                  <b className="font-semibold">{mxn(sim.calcUsd * sim.mxnRate)}</b>
-                </li>
-                <li>
-                  <span className="text-muted">일본 엔 </span>
-                  <b className="font-semibold">{jpy(sim.calcUsd * sim.jpyRate)}</b>
-                </li>
-              </ul>
-            </div>
-            <p className="text-[11px] text-muted">페소 11-11, 엔 11-12 시세 기준 · 미팅 전에 다시 확인해 주세요</p>
-          </div>
-        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -221,10 +195,21 @@ export function ExportPanel({
               <th className="px-2 py-2 font-normal">주문 수량</th>
               <th className="w-24 px-2 py-2 text-right font-normal">목표 마진</th>
               <th className="px-2 py-2 text-right font-normal">FOB 단가 (USD)</th>
-              <th className="px-2 py-2 text-right font-normal">원화 환산</th>
-              <th className="px-2 py-2 text-right font-normal">멕시코 페소</th>
-              <th className="px-2 py-2 text-right font-normal">일본 엔</th>
-              <th className="px-2 py-2 text-right font-normal">국내 정가 대비</th>
+              <th className="border-l border-dashed border-line bg-subtle/60 px-2 py-2 text-right font-normal">
+                원화 환산
+                <span className="block text-[11px]">참고</span>
+              </th>
+              <th className="bg-subtle/60 px-2 py-2 text-right font-normal">
+                멕시코 페소
+                <span className="block text-[11px]">참고</span>
+              </th>
+              <th className="border-r border-dashed border-line bg-subtle/60 px-2 py-2 text-right font-normal">
+                일본 엔<span className="block text-[11px]">참고</span>
+              </th>
+              <th className="px-2 py-2 text-right font-normal">
+                국내 정가 대비
+                <span className="block text-[11px]">정가 {won(listPrice)}원 (VAT 포함)</span>
+              </th>
               <th className="px-2 py-2 text-right font-normal">개당 원가 합계</th>
               <th className="px-2 py-2 text-right font-normal">헤르바 개당 남는 금액</th>
               <th className="px-2 py-2 text-right font-normal">주문 시 헤르바 남는 금액</th>
@@ -273,13 +258,13 @@ export function ExportPanel({
                   <td className="px-2 py-2 text-right text-base font-semibold tabular-nums text-export">
                     {r.fobUsd === null ? <span className="text-sale">불가</span> : usd(r.fobUsd)}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-muted">
+                  <td className="border-l border-dashed border-line bg-subtle/60 px-2 py-2 text-right text-xs whitespace-nowrap italic tabular-nums text-muted">
                     {r.fobKrw === null ? "—" : `${won(r.fobKrw)}원`}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-muted">
+                  <td className="bg-subtle/60 px-2 py-2 text-right text-xs whitespace-nowrap italic tabular-nums text-muted">
                     {r.fobUsd === null ? "—" : mxn(r.fobUsd * sim.mxnRate)}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-muted">
+                  <td className="border-r border-dashed border-line bg-subtle/60 px-2 py-2 text-right text-xs whitespace-nowrap italic tabular-nums text-muted">
                     {r.fobUsd === null ? "—" : jpy(r.fobUsd * sim.jpyRate)}
                   </td>
                   <td className="px-2 py-2 text-right tabular-nums text-muted">
@@ -310,8 +295,8 @@ export function ExportPanel({
                     {r.fobUsd !== null && (
                       <p className="text-[11px] tabular-nums text-muted">
                         주문 금액 {usd(r.fobUsd * r.qty)}
-                        <span className="block">
-                          {mxn(r.fobUsd * r.qty * sim.mxnRate)} · {jpy(r.fobUsd * r.qty * sim.jpyRate)}
+                        <span className="block italic">
+                          참고 {mxn(r.fobUsd * r.qty * sim.mxnRate)} · {jpy(r.fobUsd * r.qty * sim.jpyRate)}
                         </span>
                       </p>
                     )}
@@ -337,7 +322,11 @@ export function ExportPanel({
             원가는 <Key>VAT 뺀 금액</Key>이에요 (국내 원가 ÷ 1.1, 부가세 없는 인건비는 그대로)
           </li>
           <li>헤르바 개당 남는 금액 = FOB 단가(원화) − 송금 수수료 − 개당 원가 합계</li>
-          <li>국내 정가 대비 = FOB 단가(원화) ÷ 국내 정가. 바이어의 운임·관세·유통 마진이 그 위에 붙어요</li>
+          <li>
+            국내 정가 대비 = FOB 단가(원화) ÷ 국내 정가 {won(listPrice)}원(VAT 포함). 바이어의 운임·관세·유통 마진이 그
+            위에 붙어요
+          </li>
+          <li>원화·페소·엔 환산은 참고용이에요. 거래 단가는 USD예요</li>
         </ul>
       </div>
     </div>

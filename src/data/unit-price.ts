@@ -58,8 +58,6 @@ export type ExportSim = {
   mxnRate: number;
   /** 1달러당 일본 엔 */
   jpyRate: number;
-  /** 환율 계산기에 넣는 달러 금액 */
-  calcUsd: number;
   /** 선적 1회당 드는 비용 (주문 수량으로 나눠 개당에 반영) */
   shipmentCosts: CostItem[];
   /** 수출 때만 개당 더 드는 비용 */
@@ -125,7 +123,6 @@ export const DEFAULT_STATE: SimState = {
     fxRate: 1350, // 2026-11-12 직접 입력 (11-11 종가 약 1,340원)
     mxnRate: 18.62, // 2026-11-11 XE 중간값 약 18.62
     jpyRate: 159.8, // 2026-11-12 Trading Economics 약 159.80
-    calcUsd: 10,
     shipmentCosts: [
       { id: "inland", label: "내륙 운송·선적항 반입", amount: 300000 },
       { id: "clearance", label: "수출 통관·포워딩·서류", amount: 400000, note: "THC·서류 발급비 포함" },
