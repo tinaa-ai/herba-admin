@@ -30,7 +30,7 @@ The dev server does not pick up edits to `src/app/globals.css` (color tokens sta
 
 ## Competitor price data
 
-`/competitors` renders entirely from `src/data/competitor-prices.ts`; updating prices means editing that file only. The page derives everything else:
+`/competitors` renders entirely from `src/data/competitor-prices.ts`; updating prices means editing that file only. `src/lib/competitors.ts` derives the numbers on the server, and the client component `src/app/competitors/CompetitorTable.tsx` shows one summary row per product that expands into its channel-by-channel price list:
 
 - Rows are sorted by unit price (price ÷ `units` for bundles), high to low; USD rows go last.
 - Discount amount/% are always against that product's `listPrice`. Prices above list are shown as "정가보다 X% 비쌈".
