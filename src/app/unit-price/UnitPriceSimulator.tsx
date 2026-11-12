@@ -8,6 +8,12 @@ import { NumberInput, ceil100, pct, won } from "./ui";
 
 // v2: 모든 금액을 VAT 포함으로 바꾸면서 예전(VAT 별도) 저장값은 버려요
 const STORAGE_KEY = "herba.unit-price.v2";
+/**
+ * 저장값 형식 버전. 옛 저장값을 고치는 마이그레이션은 이 번호가 낮을 때 한 번만 돌아요.
+ * 마이그레이션을 새로 넣을 때는 이 번호를 올리고 `if (version < 새 번호)` 블록을 추가해요.
+ * (버전 없이 매번 돌리면 사용자가 일부러 넣은 값이 옛 기본값과 같을 때 계속 덮어써요)
+ */
+const SCHEMA_VERSION = 1;
 
 const newId = () => Math.random().toString(36).slice(2, 9);
 
@@ -15,82 +21,93 @@ function loadState(): SimState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<SimState>;
+    const { schemaVersion, ...parsed } = JSON.parse(raw) as Partial<SimState> & { schemaVersion?: number };
+    const version = typeof schemaVersion === "number" ? schemaVersion : 0;
     const merged = { ...DEFAULT_STATE, ...parsed };
     // 수출 설정에 새 칸(페소·엔 환율 등)이 생기면 기본값으로 채워요
     merged.exportSim = { ...DEFAULT_STATE.exportSim, ...parsed.exportSim };
-    // 정가 기본값이 24,900 → 25,000 → 27,000원으로 바뀌었어요. 손대지 않은 옛 기본값이면 새 값으로
-    if (merged.price === 24900 || merged.price === 25000) merged.price = DEFAULT_STATE.price;
-    // 판매가로 거꾸로 계산하던 상시 할인율의 소수점 오차(9.9999…%)를 정리해요
-    merged.everydayDiscount = Math.round(merged.everydayDiscount * 10000) / 10000;
-    // 하한선을 금액(floorPrice)에서 할인율(floorDiscount)로 바꿨어요. 옛 저장값의 floorPrice는 버려요
-    delete (merged as Partial<SimState> & { floorPrice?: number }).floorPrice;
-    // 약국 유통 1·2·3안(distributorPlans)을 수량 구간별 공급률(pharmacyTiers) 하나로 바꿨어요
-    for (const key of ["distributorTiers", "distributorPlans", "selectedPlan"])
-      delete (merged as Record<string, unknown>)[key];
-    // 주력 채널 표시가 생기기 전에 저장된 값이면 기본값의 주력 여부와 새 이름을 이어받아요
-    // 약국 유통 첫 구간을 1~5,000개 → 1,000~9,999개로 바꿨어요 (옛 기본값 그대로면 새 값으로)
-    merged.pharmacyTiers = merged.pharmacyTiers.map((t) =>
-      t.id === "t1" && t.to === 5000 ? { ...t, from: t.from === 1 ? 1000 : t.from, to: 9999 } : t,
-    );
-    // 공급률 기본값을 55/52/50/48% → 50/48/46/44%로 바꿨어요. 옛 기본값 그대로면 새 값으로
-    const OLD_RATES = [55, 52, 50, 48];
-    if (
-      merged.pharmacyTiers.length === OLD_RATES.length &&
-      merged.pharmacyTiers.every((t, i) => t.rate === OLD_RATES[i])
-    ) {
-      merged.pharmacyTiers = merged.pharmacyTiers.map((t, i) => ({
-        ...t,
-        rate: DEFAULT_STATE.pharmacyTiers[i]?.rate ?? t.rate,
-      }));
-    }
-    // 환율 기본값을 1,400 → 1,340원으로 바꿨어요. 옛 기본값 그대로면 새 값으로
-    if (merged.exportSim.fxRate === 1400)
-      merged.exportSim = { ...merged.exportSim, fxRate: DEFAULT_STATE.exportSim.fxRate };
-    // 채널 이익은 이제 판매가(기본 20,000원) 기준이라, 예전 정가 대비 상시 할인 10%가 그대로면 0%로 되돌려요
-    merged.channels = merged.channels.map((c) => (c.everyday && c.discount === 10 ? { ...c, discount: 0 } : c));
-    // 판매가는 이제 정가 × (1 − 상시 할인율)로 계산해요. 따로 저장하던 sellingPrice는 버려요
-    delete (merged as Record<string, unknown>).sellingPrice;
-    // 검사/품질 관리(개당 원가)를 판관비 '연구개발비 (임상·개발·품질검사)'로 옮겼어요
-    const qc = merged.unitCosts.find((c) => c.id === "qc");
-    if (qc) {
-      merged.unitCosts = merged.unitCosts.filter((c) => c.id !== "qc");
-      const defRnd = DEFAULT_STATE.fixedCosts.find((c) => c.id === "rnd");
-      merged.fixedCosts = merged.fixedCosts.map((c) =>
-        c.id === "rnd" && defRnd ? { ...c, label: defRnd.label, amount: c.amount === 0 ? defRnd.amount : c.amount } : c,
-      );
-    }
-    // 3PL 물류비를 개당 원가(채널별 개별 배송)에서 판관비로 옮겼어요. 예전 개당 금액 × 판매 수량으로 넣어요
-    const legacy = merged as Partial<SimState> & { shippingCost?: number };
-    if (!merged.fixedCosts.some((c) => c.id === "3pl")) {
-      const def = DEFAULT_STATE.fixedCosts.find((c) => c.id === "3pl")!;
-      const amount = legacy.shippingCost !== undefined ? legacy.shippingCost * merged.quantity : def.amount;
-      const at = merged.fixedCosts.findIndex((c) => c.id === "storage") + 1;
-      merged.fixedCosts = [...merged.fixedCosts.slice(0, at), { ...def, amount }, ...merged.fixedCosts.slice(at)];
-    }
-    delete legacy.shippingCost;
-    // 긴 이름은 잘려서 짧게 바꾸고 설명은 아래 줄(note)로 옮겼어요
-    merged.fixedCosts = merged.fixedCosts.map((c) => {
-      const def = DEFAULT_STATE.fixedCosts.find((d) => d.id === c.id);
-      const old = c.label === "연구개발비 (임상·개발·품질검사)" || c.label === "3PL 물류비 (택배·보관·충전재)";
-      return old && def ? { ...c, label: def.label, note: def.note } : c;
-    });
-    // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
-    merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
+    if (version < 1) migrateLegacy(merged);
+    // 채널에 새 필드가 생기면 기본값으로 채워요 (값을 덮어쓰지 않아서 매번 해도 괜찮아요)
     merged.channels = merged.channels.map((c) => {
       const def = DEFAULT_STATE.channels.find((d) => d.id === c.id);
-      return {
-        ...c,
-        main: c.main ?? def?.main ?? false,
-        discount: c.discount ?? def?.discount ?? 0,
-        everyday: c.everyday ?? def?.everyday ?? false,
-        name: c.id === "naver" && c.name === "네이버 스마트스토어" ? (def?.name ?? c.name) : c.name,
-      };
+      return { ...c, main: c.main ?? def?.main ?? false, discount: c.discount ?? def?.discount ?? 0 };
     });
     return merged;
   } catch {
     return null;
   }
+}
+
+/** 버전 번호가 생기기 전(0)에 저장된 값을 지금 형식으로 바꿔요. 저장할 때 버전이 붙어서 한 번만 돌아요 */
+function migrateLegacy(merged: SimState) {
+  const legacy = merged as SimState & Record<string, unknown>;
+  // 정가 기본값이 24,900 → 25,000 → 27,000원으로 바뀌었어요. 손대지 않은 옛 기본값이면 새 값으로
+  if (merged.price === 24900 || merged.price === 25000) merged.price = DEFAULT_STATE.price;
+  // 판매가로 거꾸로 계산하던 상시 할인율의 소수점 오차(9.9999…%)를 정리해요
+  merged.everydayDiscount = Math.round(merged.everydayDiscount * 10000) / 10000;
+  // 하한선 금액(floorPrice) → 할인율(floorDiscount), 약국 1·2·3안 → 수량 구간별 공급률(pharmacyTiers),
+  // 판매가(sellingPrice) → 정가 × (1 − 상시 할인율)로 바꿨어요. 옛 필드는 버려요
+  for (const key of ["floorPrice", "distributorTiers", "distributorPlans", "selectedPlan", "sellingPrice"])
+    delete legacy[key];
+  // 약국 유통 첫 구간을 1~5,000개 → 1,000~9,999개로 바꿨어요 (옛 기본값 그대로면 새 값으로)
+  merged.pharmacyTiers = merged.pharmacyTiers.map((t) =>
+    t.id === "t1" && t.to === 5000 ? { ...t, from: t.from === 1 ? 1000 : t.from, to: 9999 } : t,
+  );
+  // 공급률 기본값을 55/52/50/48% → 50/48/46/44%로 바꿨어요. 옛 기본값 그대로면 새 값으로
+  const OLD_RATES = [55, 52, 50, 48];
+  if (
+    merged.pharmacyTiers.length === OLD_RATES.length &&
+    merged.pharmacyTiers.every((t, i) => t.rate === OLD_RATES[i])
+  ) {
+    merged.pharmacyTiers = merged.pharmacyTiers.map((t, i) => ({
+      ...t,
+      rate: DEFAULT_STATE.pharmacyTiers[i]?.rate ?? t.rate,
+    }));
+  }
+  // 환율 기본값을 1,400원에서 바꿨어요. 옛 기본값 그대로면 새 기본값으로
+  if (merged.exportSim.fxRate === 1400)
+    merged.exportSim = { ...merged.exportSim, fxRate: DEFAULT_STATE.exportSim.fxRate };
+  // 채널 이익이 판매가(상시 할인가) 기준이 되기 전에는 자사몰·네이버에 상시 할인 10%를 채널 할인으로 넣었어요.
+  // 그 값이 그대로면 0%로 되돌리고, 그때 쓰던 everyday 표시는 버려요
+  const EVERYDAY_CHANNELS = ["own", "naver"];
+  merged.channels = merged.channels.map((c) => {
+    const { everyday, ...rest } = c as Channel & { everyday?: boolean; shipping?: boolean };
+    delete rest.shipping; // 채널별 택배비 표시(3PL을 판관비로 옮기기 전)도 버려요
+    const wasEveryday = everyday ?? EVERYDAY_CHANNELS.includes(c.id);
+    return wasEveryday && rest.discount === 10 ? { ...rest, discount: 0 } : rest;
+  });
+  // 검사/품질 관리(개당 원가)를 판관비 '연구개발비'(임상·개발·품질검사)로 옮겼어요
+  if (merged.unitCosts.some((c) => c.id === "qc")) {
+    merged.unitCosts = merged.unitCosts.filter((c) => c.id !== "qc");
+    const defRnd = DEFAULT_STATE.fixedCosts.find((c) => c.id === "rnd");
+    merged.fixedCosts = merged.fixedCosts.map((c) =>
+      c.id === "rnd" && defRnd ? { ...c, label: defRnd.label, amount: c.amount === 0 ? defRnd.amount : c.amount } : c,
+    );
+  }
+  // 3PL 물류비를 개당 원가(shippingCost)에서 판관비로 옮겼어요. 예전 개당 금액 × 판매 수량으로 넣어요.
+  // shippingCost가 있는 옛 저장값에만 넣어서, 사용자가 지운 3PL 항목은 다시 생기지 않아요
+  const shippingCost = legacy.shippingCost;
+  if (typeof shippingCost === "number" && !merged.fixedCosts.some((c) => c.id === "3pl")) {
+    const def = DEFAULT_STATE.fixedCosts.find((c) => c.id === "3pl")!;
+    const at = merged.fixedCosts.findIndex((c) => c.id === "storage") + 1;
+    merged.fixedCosts = [
+      ...merged.fixedCosts.slice(0, at),
+      { ...def, amount: shippingCost * merged.quantity },
+      ...merged.fixedCosts.slice(at),
+    ];
+  }
+  delete legacy.shippingCost;
+  // 긴 이름은 잘려서 짧게 바꾸고 설명은 아래 줄(note)로 옮겼어요
+  merged.fixedCosts = merged.fixedCosts.map((c) => {
+    const def = DEFAULT_STATE.fixedCosts.find((d) => d.id === c.id);
+    const old = c.label === "연구개발비 (임상·개발·품질검사)" || c.label === "3PL 물류비 (택배·보관·충전재)";
+    return old && def ? { ...c, label: def.label, note: def.note } : c;
+  });
+  // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요. 네이버는 브랜드스토어로 이름이 바뀌었어요
+  const naverName = DEFAULT_STATE.channels.find((d) => d.id === "naver")?.name;
+  merged.channels = merged.channels
+    .filter((c) => c.id !== "pharmacy")
+    .map((c) => (c.id === "naver" && c.name === "네이버 스마트스토어" && naverName ? { ...c, name: naverName } : c));
 }
 
 const CARD_TONE = {
@@ -284,7 +301,7 @@ export function UnitPriceSimulator() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, schemaVersion: SCHEMA_VERSION }));
     } catch {
       /* 저장이 막힌 브라우저에서도 계산은 그대로 */
     }

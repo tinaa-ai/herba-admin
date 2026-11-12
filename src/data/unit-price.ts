@@ -27,14 +27,10 @@ export type Channel = {
   fee: number;
   /** 결제(카드) 수수료 % — 채널 수수료에 포함돼 있으면 0 */
   card: number;
-  /** (예전 필드) 채널별 택배비 적용 여부 — 3PL 물류비를 판관비로 옮겨서 지금은 쓰지 않아요 */
-  shipping?: boolean;
   /** 판매가에서 추가로 깎는 할인율 % — 실판매가 = 판매가 × (1 − 할인율) */
   discount: number;
   /** 주력 채널: 표 맨 위에 따로 묶어 보여줌 */
   main?: boolean;
-  /** (예전 필드) 상시 할인율 연동 — 지금은 쓰지 않아요 */
-  everyday?: boolean;
 };
 
 /** 약국 유통사(매입 유통) 수량 구간. rate는 공급률: 정가의 몇 %를 받고 넘기는지 */
@@ -142,16 +138,8 @@ export const DEFAULT_STATE: SimState = {
   },
   targetMargin: 20,
   channels: [
-    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 0, main: true, everyday: true },
-    {
-      id: "naver",
-      name: "네이버 브랜드스토어",
-      fee: 7,
-      card: 0,
-      discount: 0,
-      main: true,
-      everyday: true,
-    },
+    { id: "own", name: "자사몰", fee: 0, card: 3, discount: 0, main: true },
+    { id: "naver", name: "네이버 브랜드스토어", fee: 7, card: 0, discount: 0, main: true },
     { id: "oliveyoung", name: "올리브영", fee: 60, card: 0, discount: 0 },
     { id: "musinsa", name: "무신사", fee: 30, card: 0, discount: 0 },
     { id: "kakao-store", name: "카카오톡 톡스토어", fee: 3.3, card: 0, discount: 0 },
