@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { logout } from "@/app/login/actions";
 
@@ -28,7 +28,17 @@ const tabClass = (active: boolean) =>
 function GroupTab({ group, pathname }: { group: TabGroup; pathname: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const current = group.items.find((it) => pathname.startsWith(it.href));
+
+  // 다른 탭에 있을 때 누르면 첫 하위 페이지로 이동해 밑줄이 옮겨 와요. 이미 이 그룹에 있으면 메뉴를 열고 닫아요
+  const onClick = () => {
+    if (!current && group.items[0]) {
+      router.push(group.items[0].href);
+    } else {
+      setOpen((o) => !o);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +59,7 @@ function GroupTab({ group, pathname }: { group: TabGroup; pathname: string }) {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={onClick}
         className={`flex items-center gap-1 ${tabClass(!!current)}`}
       >
         {group.label}
