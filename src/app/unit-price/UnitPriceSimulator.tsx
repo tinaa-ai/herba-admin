@@ -24,6 +24,10 @@ function loadState(): SimState | null {
     for (const key of ["distributorTiers", "distributorPlans", "selectedPlan"])
       delete (merged as Record<string, unknown>)[key];
     // 주력 채널 표시가 생기기 전에 저장된 값이면 기본값의 주력 여부와 새 이름을 이어받아요
+    // 약국 유통 첫 구간을 1~5,000개 → 1,000~9,999개로 바꿨어요 (옛 기본값 그대로면 새 값으로)
+    merged.pharmacyTiers = merged.pharmacyTiers.map((t) =>
+      t.id === "t1" && t.to === 5000 ? { ...t, from: t.from === 1 ? 1000 : t.from, to: 9999 } : t,
+    );
     // 약국은 '약국 유통' 패널에서 따로 계산해서 채널 표에서는 뺐어요
     merged.channels = merged.channels.filter((c) => c.id !== "pharmacy");
     merged.channels = merged.channels.map((c) => {

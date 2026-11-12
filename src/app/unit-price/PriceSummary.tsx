@@ -68,7 +68,7 @@ export function PriceSummary({
   const calc = (t: PharmacyTier) => {
     const supply = price * (t.rate / 100); // VAT 포함
     const profit = supply - cost;
-    const exampleQty = t.to ?? t.from;
+    const exampleQty = t.from; // 구간 최소 주문 수량 기준
     return { supply, supplyEx: supply / VAT, share: price - supply, profit, exampleQty };
   };
   const first = pharmacyTiers[0];
