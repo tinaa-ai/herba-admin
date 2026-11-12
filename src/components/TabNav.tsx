@@ -7,6 +7,7 @@ import { logout } from "@/app/login/actions";
 const tabs = [
   { href: "/competitors", label: "경쟁사 제품 비교" },
   { href: "/trade-shows", label: "박람회 일정" },
+  { href: "/unit-price", label: "제품단가금액" },
 ];
 
 export function TabNav() {

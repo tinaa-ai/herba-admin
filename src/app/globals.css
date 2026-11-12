@@ -11,6 +11,8 @@
   --accent-soft: #e3efe8;
   --hero: #fcf2f0;
   --hero-line: #f2dfdb;
+  --cost-bg: #f2f0ea;
+  --cost-line: #e3e0d6;
   --sale: #c62f2f;
   --panel: #f0efeb;
   --best: #a8721a;
@@ -24,6 +26,9 @@
   --cat-wellness: #4a5fa8;
   --cat-wellness-soft: #e8ecf8;
   --reach-global: #1f4f8a;
+  --seg-fee: #c98a5a;
+  --seg-cost: #6f7f9e;
+  --seg-sga: #a88bc0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,6 +43,8 @@
     --accent-soft: #1d3329;
     --hero: #221715;
     --hero-line: #3a2724;
+    --cost-bg: #201f1c;
+    --cost-line: #34322d;
     --sale: #f07870;
     --panel: #141414;
     --best: #e2b45c;
@@ -51,6 +58,9 @@
     --cat-wellness: #9fb0ec;
     --cat-wellness-soft: #1f2540;
     --reach-global: #8fb6ee;
+    --seg-fee: #d29a6c;
+    --seg-cost: #8698bd;
+    --seg-sga: #b59bd0;
   }
 }
 
@@ -65,6 +75,8 @@
   --color-accent-soft: var(--accent-soft);
   --color-hero: var(--hero);
   --color-hero-line: var(--hero-line);
+  --color-cost-bg: var(--cost-bg);
+  --color-cost-line: var(--cost-line);
   --color-sale: var(--sale);
   --color-panel: var(--panel);
   --color-best: var(--best);
@@ -78,6 +90,9 @@
   --color-cat-wellness: var(--cat-wellness);
   --color-cat-wellness-soft: var(--cat-wellness-soft);
   --color-reach-global: var(--reach-global);
+  --color-seg-fee: var(--seg-fee);
+  --color-seg-cost: var(--seg-cost);
+  --color-seg-sga: var(--seg-sga);
   --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Malgun Gothic", sans-serif;
 }

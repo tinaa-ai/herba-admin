@@ -1,0 +1,530 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { DEFAULT_STATE, PRODUCT, QUOTE, type Channel, type CostItem, type SimState } from "@/data/unit-price";
+
+// v2: 모든 금액을 VAT 포함으로 바꾸면서 예전(VAT 별도) 저장값은 버려요
+const STORAGE_KEY = "herba.unit-price.v2";
+
+const won = (n: number) => Math.round(n).toLocaleString("ko-KR");
+const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+const ceil100 = (n: number) => Math.ceil(n / 100) * 100;
+const newId = () => Math.random().toString(36).slice(2, 9);
+
+function loadState(): SimState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<SimState>;
+    return { ...DEFAULT_STATE, ...parsed };
+  } catch {
+    return null;
+  }
+}
+
+function NumberInput({
+  value,
+  onChange,
+  suffix,
+  label,
+  className = "",
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  suffix?: string;
+  label: string;
+  className?: string;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <label
+      className={`flex items-center rounded-md border border-line bg-surface focus-within:border-foreground ${className}`}
+    >
+      <span className="sr-only">{label}</span>
+      <input
+        inputMode="decimal"
+        value={draft ?? value.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}
+        onFocus={(e) => {
+          setDraft(String(value));
+          requestAnimationFrame(() => e.target.select());
+        }}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          const n = Number(e.target.value.replace(/,/g, ""));
+          if (Number.isFinite(n)) onChange(n);
+        }}
+        onBlur={() => setDraft(null)}
+        className="w-full min-w-0 bg-transparent px-2 py-1.5 text-right text-sm tabular-nums outline-none"
+      />
+      {suffix && <span className="pr-2 text-xs text-muted">{suffix}</span>}
+    </label>
+  );
+}
+
+const CARD_TONE = {
+  cost: { box: "border-cost-line bg-cost-bg", title: "" },
+  price: { box: "border-hero-line bg-hero", title: "text-sale" },
+};
+
+function Card({
+  title,
+  aside,
+  tone,
+  children,
+}: {
+  title: string;
+  aside?: React.ReactNode;
+  tone: keyof typeof CARD_TONE;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={`rounded-xl border p-4 ${CARD_TONE[tone].box}`}>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h2 className={`text-sm font-semibold ${CARD_TONE[tone].title}`}>{title}</h2>
+        {aside && <span className="text-xs text-muted">{aside}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function CostList({
+  items,
+  onChange,
+  addLabel,
+}: {
+  items: CostItem[];
+  onChange: (items: CostItem[]) => void;
+  addLabel: string;
+}) {
+  const update = (id: string, patch: Partial<CostItem>) =>
+    onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  return (
+    <div className="space-y-1.5">
+      {items.map((it) => (
+        <div key={it.id} className="group">
+          <div className="flex items-center gap-2">
+            <input
+              value={it.label}
+              aria-label="항목 이름"
+              onChange={(e) => update(it.id, { label: e.target.value })}
+              className="min-w-0 flex-1 rounded px-1 py-1 text-sm outline-none hover:bg-subtle focus:bg-subtle"
+            />
+            <NumberInput
+              label={`${it.label} 금액`}
+              value={it.amount}
+              onChange={(amount) => update(it.id, { amount })}
+              suffix="원"
+              className="w-32 shrink-0"
+            />
+            <button
+              type="button"
+              aria-label={`${it.label} 삭제`}
+              onClick={() => onChange(items.filter((x) => x.id !== it.id))}
+              className="w-5 shrink-0 text-muted opacity-40 hover:text-sale hover:opacity-100 group-hover:opacity-100"
+            >
+              ×
+            </button>
+          </div>
+          {it.note && <p className="pl-1 text-[11px] text-muted">{it.note}</p>}
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...items, { id: newId(), label: "새 항목", amount: 0 }])}
+        className="mt-1 text-xs text-muted hover:text-foreground"
+      >
+        + {addLabel}
+      </button>
+    </div>
+  );
+}
+
+function Connector({ children }: { children: React.ReactNode }) {
+  return (
+    <div aria-hidden className="flex items-center justify-center">
+      <span className="flex size-6 items-center justify-center rounded-full border border-line bg-surface text-xs text-muted">
+        <span className="lg:hidden">{children === "→" ? "↓" : children}</span>
+        <span className="hidden lg:inline">{children}</span>
+      </span>
+    </div>
+  );
+}
+
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className={`flex items-baseline justify-between gap-2 text-sm ${strong ? "font-semibold" : "text-muted"}`}>
+      <span>{label}</span>
+      <span className="tabular-nums text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+      <p className="text-xs text-muted">{label}</p>
+      <p className="mt-0.5 text-xl font-semibold tabular-nums">{value}</p>
+      {sub && <p className="mt-0.5 text-[11px] text-muted">{sub}</p>}
+    </div>
+  );
+}
+
+type ChannelResult = {
+  channel: Channel;
+  fee: number;
+  cogs: number;
+  sga: number;
+  profit: number;
+  margin: number;
+  breakEven: number | null;
+  target: number | null;
+};
+
+const SEGMENTS = [
+  { key: "fee", label: "채널 수수료", className: "bg-seg-fee" },
+  { key: "cogs", label: "원가", className: "bg-seg-cost" },
+  { key: "sga", label: "판관비", className: "bg-seg-sga" },
+] as const;
+
+function PriceBar({ r, price }: { r: ChannelResult; price: number }) {
+  const costs = r.fee + r.cogs + r.sga;
+  const base = Math.max(price, costs, 1);
+  const w = (n: number) => `${(Math.max(n, 0) / base) * 100}%`;
+  return (
+    <div
+      className="relative flex h-3 w-full overflow-hidden rounded-sm bg-subtle"
+      title={`수수료 ${won(r.fee)} · 원가 ${won(r.cogs)} · 판관비 ${won(r.sga)} · 이익 ${won(r.profit)}`}
+    >
+      {SEGMENTS.map((s) => (
+        <div key={s.key} className={s.className} style={{ width: w(r[s.key]) }} />
+      ))}
+      {r.profit > 0 && <div className="bg-accent" style={{ width: w(r.profit) }} />}
+      {r.profit < 0 && (
+        <div className="absolute inset-y-0 w-0.5 bg-sale" style={{ left: w(price) }} aria-label="소비자가 위치" />
+      )}
+    </div>
+  );
+}
+
+export function UnitPriceSimulator() {
+  const [state, setState] = useState<SimState>(DEFAULT_STATE);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const saved = loadState();
+    // 저장값은 브라우저에만 있어서 마운트 후에 읽어요 (서버 렌더와 어긋나지 않게).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved) setState(saved);
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      /* 저장이 막힌 브라우저에서도 계산은 그대로 */
+    }
+  }, [state, loaded]);
+
+  const set = <K extends keyof SimState>(key: K, value: SimState[K]) => setState((s) => ({ ...s, [key]: value }));
+  const updateChannel = (id: string, patch: Partial<Channel>) =>
+    set(
+      "channels",
+      state.channels.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    );
+
+  const { unitCosts, shippingCost, fixedCosts, quantity, price, targetMargin, channels } = state;
+
+  const supply = unitCosts.filter((c) => ["raw", "labor", "material"].includes(c.id)).reduce((s, c) => s + c.amount, 0);
+  const unitCostTotal = unitCosts.reduce((s, c) => s + c.amount, 0);
+  const fixedTotal = fixedCosts.reduce((s, c) => s + c.amount, 0);
+  const sgaPerUnit = quantity > 0 ? fixedTotal / quantity : 0;
+
+  const results: ChannelResult[] = useMemo(
+    () =>
+      channels.map((channel) => {
+        const rate = (channel.fee + channel.card) / 100;
+        const cogs = unitCostTotal + (channel.shipping ? shippingCost : 0);
+        const fee = price * rate;
+        const profit = price - fee - cogs - sgaPerUnit;
+        const cost = cogs + sgaPerUnit;
+        const beDenom = 1 - rate;
+        const tDenom = 1 - targetMargin / 100 - rate;
+        return {
+          channel,
+          fee,
+          cogs,
+          sga: sgaPerUnit,
+          profit,
+          margin: price > 0 ? profit / price : 0,
+          breakEven: beDenom > 0 ? ceil100(cost / beDenom) : null,
+          target: tDenom > 0 ? ceil100(cost / tDenom) : null,
+        };
+      }),
+    [channels, unitCostTotal, shippingCost, price, sgaPerUnit, targetMargin],
+  );
+
+  const belowMoq = quantity > 0 && quantity < QUOTE.containerMoq;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Tile
+          label="제조 공급가 (견적)"
+          value={`${won(supply)}원`}
+          sub={`원료비 + 제조 노무비 + 부자재 · 견적 ${won(QUOTE.supply)}원 + VAT`}
+        />
+        <Tile
+          label="개당 원가"
+          value={`${won(unitCostTotal)}원`}
+          sub={`개별 배송 채널은 +${won(shippingCost)}원 = ${won(unitCostTotal + shippingCost)}원`}
+        />
+        <Tile label="개당 판관비" value={`${won(sgaPerUnit)}원`} sub={`${won(fixedTotal)}원 ÷ ${won(quantity)}개`} />
+        <Tile
+          label="개당 총원가"
+          value={`${won(unitCostTotal + sgaPerUnit)}원`}
+          sub={`개별 배송 시 ${won(unitCostTotal + shippingCost + sgaPerUnit)}원 · 채널 수수료 제외`}
+        />
+      </div>
+
+      <div className="rounded-2xl border border-line bg-surface p-3">
+        <p className="mb-2 px-1 text-xs text-muted">개당 원가 + 판관비를 바탕으로 소비자가를 정해요</p>
+        <div className="grid items-stretch gap-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr]">
+          <Card title="개당 원가" aside="VAT 포함" tone="cost">
+            <CostList items={unitCosts} onChange={(v) => set("unitCosts", v)} addLabel="원가 항목 추가" />
+            <div className="mt-3 border-t border-line pt-3">
+              <div className="flex items-center gap-2">
+                <span className="flex-1 px-1 text-sm">3PL 물류비 (택배박스, 충전재)</span>
+                <NumberInput
+                  label="3PL 물류비"
+                  value={shippingCost}
+                  onChange={(v) => set("shippingCost", v)}
+                  suffix="원"
+                  className="w-32 shrink-0"
+                />
+                <span className="w-5 shrink-0" />
+              </div>
+              <p className="pl-1 text-[11px] text-muted">
+                아래 채널 표에서 &lsquo;개별 배송&rsquo;에 체크한 채널에만 들어가요
+              </p>
+            </div>
+            <div className="mt-3 space-y-1 border-t border-line pt-3">
+              <Row label="원가 소계" value={`${won(unitCostTotal)}원`} />
+              <Row label="개별 배송 포함" value={`${won(unitCostTotal + shippingCost)}원`} strong />
+            </div>
+          </Card>
+
+          <Connector>+</Connector>
+
+          <Card title="판관비" aside="VAT 포함 · 판매 수량 전체 기간 합계" tone="cost">
+            <CostList items={fixedCosts} onChange={(v) => set("fixedCosts", v)} addLabel="판관비 항목 추가" />
+            <div className="mt-3 space-y-1 border-t border-line pt-3">
+              <Row label="판관비 합계" value={`${won(fixedTotal)}원`} />
+              <div className="flex items-center justify-between gap-2 py-1 text-sm">
+                <span className="text-muted">판매 수량 (배분 기준)</span>
+                <NumberInput
+                  label="판매 수량"
+                  value={quantity}
+                  onChange={(v) => set("quantity", Math.max(0, v))}
+                  suffix="개"
+                  className="w-32"
+                />
+              </div>
+              <Row label="개당 판관비" value={`${won(sgaPerUnit)}원`} strong />
+              {belowMoq && (
+                <p className="rounded bg-warn-soft px-2 py-1 text-[11px] text-warn">
+                  용기 MOQ가 {QUOTE.containerMoq.toLocaleString("ko-KR")}개라 이보다 적게 팔면 남는 용기 비용이 생길 수
+                  있어요
+                </p>
+              )}
+            </div>
+          </Card>
+
+          <Connector>→</Connector>
+
+          <Card title="가격 설정" tone="price">
+            <div className="space-y-3">
+              <div>
+                <p className="mb-1 text-sm">소비자가 (VAT 포함)</p>
+                <NumberInput
+                  label="소비자가"
+                  value={price}
+                  onChange={(v) => set("price", Math.max(0, v))}
+                  suffix="원"
+                  className="[&_input]:py-2 [&_input]:text-lg [&_input]:font-semibold"
+                />
+                <p className="mt-1 text-[11px] text-muted">10mL당 {won((price / PRODUCT.volumeMl) * 10)}원</p>
+              </div>
+              <div>
+                <p className="mb-1 text-sm">목표 이익률</p>
+                <NumberInput
+                  label="목표 이익률"
+                  value={targetMargin}
+                  onChange={(v) => set("targetMargin", Math.min(99, Math.max(0, v)))}
+                  suffix="%"
+                />
+                <p className="mt-1 text-[11px] text-muted">소비자가 대비. 채널 표의 &lsquo;목표가&rsquo; 계산에 써요</p>
+              </div>
+              <div className="border-t border-line pt-3 text-[11px] leading-relaxed text-muted">
+                <p className="mb-1.5 font-medium text-foreground">소비자가 구성</p>
+                <ul className="flex flex-wrap gap-x-3 gap-y-1">
+                  {SEGMENTS.map((s) => (
+                    <li key={s.key} className="flex items-center gap-1">
+                      <span className={`inline-block size-2.5 rounded-sm ${s.className}`} />
+                      {s.label}
+                    </li>
+                  ))}
+                  <li className="flex items-center gap-1">
+                    <span className="inline-block size-2.5 rounded-sm bg-accent" />
+                    이익
+                  </li>
+                </ul>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("고친 값을 모두 지우고 기본값으로 되돌릴까요?")) setState(DEFAULT_STATE);
+                }}
+                className="text-xs text-muted underline-offset-2 hover:text-foreground hover:underline"
+              >
+                기본값으로 되돌리기
+              </button>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <section className="rounded-xl border border-line bg-surface">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 pt-4">
+          <h2 className="text-sm font-semibold">채널별 개당 이익 · 소비자가 {won(price)}원 기준</h2>
+          <span className="text-xs text-muted">수수료율은 예상치예요. 칸을 눌러 고치세요</span>
+        </div>
+        <div className="overflow-x-auto px-2 pb-2 pt-3">
+          <table className="w-full min-w-[1040px] text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-xs text-muted">
+                <th className="px-2 py-2 font-normal">채널</th>
+                <th className="w-24 px-2 py-2 text-right font-normal">판매 수수료</th>
+                <th className="w-24 px-2 py-2 text-right font-normal">결제 수수료</th>
+                <th className="px-2 py-2 text-center font-normal">개별 배송</th>
+                <th className="px-2 py-2 text-right font-normal">수수료</th>
+                <th className="px-2 py-2 text-right font-normal">개당 이익</th>
+                <th className="px-2 py-2 text-right font-normal">이익률</th>
+                <th className="w-36 px-2 py-2 font-normal">소비자가 구성</th>
+                <th className="px-2 py-2 text-right font-normal">손익분기가</th>
+                <th className="px-2 py-2 text-right font-normal">목표가 ({targetMargin}%)</th>
+                <th className="px-2 py-2 text-right font-normal">{won(quantity)}개 이익</th>
+                <th className="w-6" />
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((r) => {
+                const c = r.channel;
+                const loss = r.profit < 0;
+                const underTarget = r.target !== null && price < r.target;
+                return (
+                  <tr key={c.id} className="group border-b border-line last:border-0">
+                    <td className="px-2 py-1.5">
+                      <input
+                        value={c.name}
+                        aria-label="채널 이름"
+                        onChange={(e) => updateChannel(c.id, { name: e.target.value })}
+                        className="w-full min-w-28 rounded px-1 py-1 outline-none hover:bg-subtle focus:bg-subtle"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <NumberInput
+                        label={`${c.name} 판매 수수료`}
+                        value={c.fee}
+                        onChange={(v) => updateChannel(c.id, { fee: Math.max(0, v) })}
+                        suffix="%"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <NumberInput
+                        label={`${c.name} 결제 수수료`}
+                        value={c.card}
+                        onChange={(v) => updateChannel(c.id, { card: Math.max(0, v) })}
+                        suffix="%"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <input
+                        type="checkbox"
+                        aria-label={`${c.name} 개별 배송`}
+                        checked={c.shipping}
+                        onChange={(e) => updateChannel(c.id, { shipping: e.target.checked })}
+                        className="size-4 accent-[var(--accent)]"
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums text-muted">{won(r.fee)}</td>
+                    <td
+                      className={`px-2 py-1.5 text-right font-semibold tabular-nums ${loss ? "text-sale" : "text-accent"}`}
+                    >
+                      {won(r.profit)}
+                    </td>
+                    <td className={`px-2 py-1.5 text-right tabular-nums ${loss ? "text-sale" : ""}`}>
+                      {pct(r.margin)}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <PriceBar r={r} price={price} />
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">
+                      {r.breakEven === null ? <span className="text-sale">불가</span> : won(r.breakEven)}
+                    </td>
+                    <td className={`px-2 py-1.5 text-right tabular-nums ${underTarget ? "font-medium text-warn" : ""}`}>
+                      {r.target === null ? <span className="text-sale">불가</span> : won(r.target)}
+                    </td>
+                    <td className={`px-2 py-1.5 text-right tabular-nums ${loss ? "text-sale" : "text-muted"}`}>
+                      {won(r.profit * quantity)}
+                    </td>
+                    <td className="px-1 py-1.5">
+                      <button
+                        type="button"
+                        aria-label={`${c.name} 삭제`}
+                        onClick={() =>
+                          set(
+                            "channels",
+                            channels.filter((x) => x.id !== c.id),
+                          )
+                        }
+                        className="text-muted opacity-40 hover:text-sale hover:opacity-100 group-hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-xs text-muted">
+          <button
+            type="button"
+            onClick={() =>
+              set("channels", [
+                ...channels,
+                {
+                  id: newId(),
+                  name: "새 채널",
+                  fee: 0,
+                  card: 0,
+                  shipping: true,
+                },
+              ])
+            }
+            className="hover:text-foreground"
+          >
+            + 채널 추가
+          </button>
+          <span>
+            목표가가 <span className="font-medium text-warn">주황색</span>이면 지금 소비자가로는 목표 이익률에 못 미쳐요
+          </span>
+        </div>
+      </section>
+    </div>
+  );
+}
