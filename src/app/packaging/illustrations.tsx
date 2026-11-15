@@ -128,12 +128,14 @@ const drawings: Record<string, ReactNode> = {
   ),
   "seal-label": (
     <>
-      <rect x="28" y="20" width="64" height="88" rx="2" {...body} />
-      <path d="M28 34 H92" {...line} />
-      <rect x="52" y="14" width="16" height="44" rx="1" {...accent} />
-      <path d="M52 40 l4 -3 l4 3 l4 -3 l4 3" stroke="var(--surface)" strokeWidth="2" fill="none" />
-      <text x="60" y="54" fontSize="7" fontWeight="700" fill="var(--accent)" textAnchor="middle">VOID</text>
-      <text x="60" y="27" fontSize="7" fontWeight="700" fill="var(--accent)" textAnchor="middle">SEAL</text>
+      <rect x="22" y="20" width="64" height="88" rx="2" {...body} />
+      <path d="M22 34 H86" {...line} />
+      <rect x="46" y="14" width="16" height="44" rx="1" {...accent} />
+      <path d="M46 40 l4 -3 l4 3 l4 -3 l4 3" stroke="var(--surface)" strokeWidth="2" fill="none" />
+      <text x="54" y="54" fontSize="7" fontWeight="700" fill="var(--accent)" textAnchor="middle">VOID</text>
+      <text x="54" y="27" fontSize="7" fontWeight="700" fill="var(--accent)" textAnchor="middle">SEAL</text>
+      <circle cx="75" cy="34" r="10" fill="var(--export-soft)" fillOpacity="0.8" stroke="var(--export)" strokeWidth="1.5" />
+      <path d="M70 32 H80 M71.5 37 H78.5" stroke="var(--export)" strokeWidth="1" strokeLinecap="round" />
     </>
   ),
   "shrink-film": (
