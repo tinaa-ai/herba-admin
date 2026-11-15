@@ -23,7 +23,7 @@ export type PackagingTerm = {
   needsCheck?: string;
 };
 
-export const categories = ["용기 재질", "용기 타입", "단상자", "아웃박스", "라벨·필름", "마케팅"] as const;
+export const categories = ["용기 재질", "용기 타입", "단상자", "아웃박스", "씰·라벨·필름", "마케팅"] as const;
 
 export const packagingTerms: PackagingTerm[] = [
   {
@@ -162,16 +162,6 @@ export const packagingTerms: PackagingTerm[] = [
     price: "1,000~4,000원 (소량이면 5,000원 이상)",
   },
   {
-    id: "shield",
-    category: "단상자",
-    name: "실드",
-    aka: "Seal sticker · 씰 스티커 · 투명 원형 봉인 스티커",
-    meaning: "단상자 입구 날개에 붙여 상자가 저절로 열리지 않게 봉인하는 투명 스티커",
-    description:
-      "보통 지름 2~3cm 정도의 투명한 원형 스티커예요. 단상자 뚜껑 날개와 몸통 이음새에 걸쳐 붙여요. 브랜드명이나 '제품 사용 후 교환 및 반품이 제한될 수 있습니다' 같은 안내 문구를 인쇄해서, 소비자에게 미개봉 상태라는 신호를 줘요. 투명해서 단상자 디자인을 가리지 않아요. 떼어 내면 다시 붙이기 어렵지만, 개봉 흔적이 확실히 남아야 한다면 봉합라벨을 써요.",
-    price: "10~30원 (1만 매 안팎 기준, 인쇄 도수·크기에 따라 달라짐)",
-  },
-  {
     id: "outer-carton",
     category: "아웃박스",
     name: "카톤박스 · 입수량",
@@ -182,8 +172,18 @@ export const packagingTerms: PackagingTerm[] = [
     price: "골판지 카톤 600~2,000원/개 (제품 1개당으로 나누면 10~50원)",
   },
   {
+    id: "lid-seal",
+    category: "씰·라벨·필름",
+    name: "리드씰",
+    aka: "Lid seal · Inner seal · 알루미늄 실링",
+    meaning: "튜브·병·자의 입구를 막아 붙이는 은색 알루미늄 막",
+    description:
+      "캡을 열면 입구에 붙어 있는 은색 막이에요. 알루미늄 호일에 접착층을 입혀 열이나 유도가열(인덕션 실링)로 입구에 붙여요. 공기·습기를 막아 내용물을 보호하고, 소비자가 처음 쓸 때 직접 뜯기 때문에 미개봉 상태와 위생을 보장해요. 쉽게 뜯도록 손잡이(탭)를 달거나 브랜드 로고를 인쇄하기도 해요.",
+    price: "튜브 리드씰 10~40원 · 병·자 인덕션 실링 15~50원",
+  },
+  {
     id: "seal-label",
-    category: "라벨·필름",
+    category: "씰·라벨·필름",
     name: "봉합라벨",
     aka: "Tamper-evident label · Void 라벨",
     meaning: "뜯으면 흔적이 남는 라벨로 개봉 여부를 확인해요",
@@ -193,7 +193,7 @@ export const packagingTerms: PackagingTerm[] = [
   },
   {
     id: "shrink-film",
-    category: "라벨·필름",
+    category: "씰·라벨·필름",
     name: "수출필름",
     aka: "Shrink film · 수축필름",
     meaning: "열을 가해 제품 상단에 밀착, 완전 밀봉",

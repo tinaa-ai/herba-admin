@@ -106,15 +106,14 @@ const drawings: Record<string, ReactNode> = {
       <path d="M60 62 V54 M56 58 L60 62 L64 58" {...line} strokeWidth="1.5" transform="translate(0 -4) rotate(180 60 58)" />
     </>
   ),
-  shield: (
+  "lid-seal": (
     <>
-      <rect x="22" y="40" width="76" height="70" rx="2" {...body} />
-      <path d="M22 40 H98 V26 H22 Z" {...soft} />
-      <path d="M22 40 H98" {...line} />
-      <circle cx="60" cy="40" r="17" fill="var(--export-soft)" fillOpacity="0.7" stroke="var(--export)" strokeWidth="1.5" />
-      <text x="60" y="38" fontSize="7" fontWeight="700" fill="var(--export)" textAnchor="middle">BRAND</text>
-      <path d="M50 44 H70 M53 48 H67" stroke="var(--export)" strokeWidth="1" strokeLinecap="round" />
-      <path d="M48 30 Q52 27 56 29" fill="none" stroke="var(--surface)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M30 74 Q30 64 42 62 V54 H78 V62 Q90 64 90 74 V110 H30 Z" {...body} />
+      <rect x="36" y="44" width="48" height="12" rx="2" {...soft} />
+      <ellipse cx="60" cy="44" rx="24" ry="7" fill="var(--line)" stroke="var(--muted)" strokeWidth="2" />
+      <path d="M44 41 Q52 38 60 40" fill="none" stroke="var(--surface)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M78 42 Q92 28 98 20 L104 24 Q96 34 82 46 Z" fill="var(--line)" stroke="var(--muted)" strokeWidth="2" strokeLinejoin="round" />
+      <rect x="40" y="10" width="40" height="18" rx="3" {...accent} transform="rotate(-12 60 19)" />
     </>
   ),
   "outer-carton": (
