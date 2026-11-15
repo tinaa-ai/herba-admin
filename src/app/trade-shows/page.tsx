@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { CALENDAR_YEAR, SURVEY_DATE, tradeShows } from "@/data/trade-shows";
-import { TradeShowCalendar } from "./TradeShowCalendar";
+import { CALENDAR_YEAR, globalSeries, SURVEY_DATE, tradeShows } from "@/data/trade-shows";
+import { TradeShowTabs } from "./TradeShowTabs";
 
 export const metadata: Metadata = {
   title: "박람회 일정",
@@ -17,7 +17,7 @@ export default function TradeShowsPage() {
         </p>
       </div>
 
-      <TradeShowCalendar shows={tradeShows} />
+      <TradeShowTabs shows={tradeShows} series={globalSeries} />
 
       <section className="mt-10 rounded-xl border border-line bg-surface px-4 py-4 text-xs leading-relaxed text-muted">
         <p className="mb-1 font-medium text-foreground">확인 방법</p>

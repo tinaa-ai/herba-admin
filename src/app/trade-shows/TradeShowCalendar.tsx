@@ -12,14 +12,14 @@ const FIT_STYLE: Record<FitCategory, string> = {
   웰니스: "bg-cat-wellness-soft text-cat-wellness",
 };
 
-const PLAN_STYLE: Record<ShowPlan, string> = {
+export const PLAN_STYLE: Record<ShowPlan, string> = {
   "부스 후보": "bg-foreground text-background",
   "참관 → 부스": "bg-accent-soft text-accent",
   참관: "bg-subtle text-foreground",
   "선택 참관": "border border-line text-muted",
 };
 
-function monthKey(s: TradeShow): string {
+export function monthKey(s: TradeShow): string {
   return s.start?.slice(0, 7) ?? s.month ?? UNDATED;
 }
 
@@ -29,7 +29,7 @@ function monthLabel(key: string, withYear = true): string {
   return withYear ? `${y}년 ${Number(m)}월` : `${Number(m)}월`;
 }
 
-function dateRange(s: TradeShow): string {
+export function dateRange(s: TradeShow): string {
   if (!s.start) return s.month ? `${Number(s.month.slice(5))}월 중` : "미정";
   const [, sm, sd] = s.start.split("-").map(Number);
   if (!s.end || s.end === s.start) return `${sm}.${sd}`;
@@ -64,7 +64,7 @@ function Chip({
   );
 }
 
-function Badge({ className, children }: { className: string; children: React.ReactNode }) {
+export function Badge({ className, children }: { className: string; children: React.ReactNode }) {
   return (
     <span className={`inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] leading-none ${className}`}>
       {children}
@@ -73,7 +73,7 @@ function Badge({ className, children }: { className: string; children: React.Rea
 }
 
 /** 이름 앞 표시: 글로벌형·지역 국제형은 강조, 현지형은 옅게 */
-function ReachBadge({ scope }: { scope: ShowScope }) {
+export function ReachBadge({ scope }: { scope: ShowScope }) {
   if (scope === "글로벌형")
     return (
       <span title="여러 대륙의 브랜드·바이어가 국제 거래를 하러 오는 전시">
@@ -236,7 +236,7 @@ export function TradeShowCalendar({ shows }: { shows: TradeShow[] }) {
     if (els.length === 0) return;
     const onScroll = () => {
       if (clickLock.current) return;
-      const offset = (barRef.current?.getBoundingClientRect().bottom ?? 0) + 24;
+      const offset = (barRef.current?.getBoundingClientRect().bottom ?? 0) + 40;
       let current = els[0].id.slice(2);
       for (const el of els) {
         if (el.getBoundingClientRect().top <= offset) current = el.id.slice(2);

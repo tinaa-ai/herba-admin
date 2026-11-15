@@ -560,3 +560,51 @@ export const tradeShows: TradeShow[] = [
     url: "https://beautyworld-dubai.ae.messefrankfurt.com/dubai/en.html",
   },
 ];
+
+/** 글로벌 전시 계열: 같은 이름으로 여러 나라에서 열리는 전시 브랜드와 국가 대표 글로벌 전시 */
+export type ShowSeries = {
+  id: string;
+  name: string;
+  organizer: string;
+  /** 무슨 전시인지 한 줄 */
+  about: string;
+  /** 레우비스 입장에서 어떻게 쓰면 되는지 */
+  forReuvis: string;
+  /** tradeShows의 id. 날짜순으로 보여준다 */
+  showIds: string[];
+};
+
+export const globalSeries: ShowSeries[] = [
+  {
+    id: "cosmoprof",
+    name: "Cosmoprof",
+    organizer: "BolognaFiere 네트워크 (이탈리아)",
+    about: "세계 최대 완제품 뷰티 B2B 브랜드. 같은 이름으로 볼로냐·미주·아시아·동남아에서 열려요.",
+    forReuvis: "완제품 수입사·총판 발굴에 가장 맞는 계열. 멕시코는 Miami, 동남아는 CBE ASEAN·Asia로 연결돼요.",
+    showIds: ["cosmoprof-miami-2027", "cosmoprof-bologna-2027", "cbe-asean-2027", "cosmoprof-lv-2027", "cosmoprof-asia-2027"],
+  },
+  {
+    id: "in-cosmetics",
+    name: "in-cosmetics",
+    organizer: "RX (Reed Exhibitions)",
+    about: "세계 최대 화장품 원료 전시. 원료사·제조사·R&D 담당자가 모여요.",
+    forReuvis: "판매처를 찾는 곳이 아니에요. 쿨링·컨디셔닝 신원료와 처방 트렌드를 볼 때만 참관.",
+    showIds: ["in-cosmetics-global-2027", "in-cosmetics-korea-2027"],
+  },
+  {
+    id: "beautyworld",
+    name: "Beautyworld",
+    organizer: "Messe Frankfurt (독일)",
+    about: "중동 두바이 본전이 글로벌, 일본 도쿄·오사카는 현지 전문미용·웰니스 전시예요.",
+    forReuvis: "일본 Tokyo의 수면·리커버리 구역이 컨디셔닝 콘셉트와 맞아요. Dubai는 중동 진출 때 검토.",
+    showIds: ["beautyworld-tokyo-2027", "beautyworld-dubai-2027", "beautyworld-osaka-2027"],
+  },
+  {
+    id: "national",
+    name: "국가 대표 글로벌 전시",
+    organizer: "개최국 단독 전시",
+    about: "한 나라에서만 열리지만 해외 바이어를 대규모로 불러오는 전시예요.",
+    forReuvis: "한국 두 곳은 해외 출장 없이 해외 바이어를 만나는 부스 후보. CBE는 중국 등록 이후에 검토.",
+    showIds: ["cbe-shanghai-2027", "intercharm-korea-2027", "kbeauty-expo-2027"],
+  },
+];
