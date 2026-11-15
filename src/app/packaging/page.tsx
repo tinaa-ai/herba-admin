@@ -96,7 +96,14 @@ function Quote({ quote }: { quote: QuoteCase }) {
           </table>
         </div>
       </div>
-      <p className="mt-2 text-[11px] text-muted">{quote.notes.join(" · ")}</p>
+      <div className="mt-3 rounded-md bg-surface px-3 py-2 text-xs">
+        <p className="mb-1 font-medium">견적 조건</p>
+        <ul className="list-disc space-y-0.5 pl-4">
+          {quote.notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
+      </div>
       <dl className="mt-3 space-y-2 border-t border-export-line pt-2 text-xs">
         {quote.qa.map((x) => (
           <div key={x.q}>
