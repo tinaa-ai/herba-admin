@@ -15,6 +15,7 @@ const tabs: (TabLink | TabGroup)[] = [
     items: [
       { href: "/unit-price", label: "제품단가금액" },
       { href: "/competitors", label: "경쟁사 제품 금액 비교" },
+      { href: "/packaging", label: "부자재 용어" },
     ],
   },
   { href: "/trade-shows", label: "박람회 일정" },

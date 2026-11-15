@@ -32,6 +32,7 @@
   --seg-fee: #c98a5a;
   --seg-cost: #6f7f9e;
   --seg-sga: #a88bc0;
+  --kraft: #c9a676;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -67,6 +68,7 @@
     --seg-fee: #d29a6c;
     --seg-cost: #8698bd;
     --seg-sga: #b59bd0;
+    --kraft: #a88a5e;
   }
 }
 
