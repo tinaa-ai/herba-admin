@@ -108,13 +108,13 @@ const drawings: Record<string, ReactNode> = {
   ),
   shield: (
     <>
-      <path d="M20 56 L60 44 L100 56 L60 68 Z" {...soft} />
-      <path d="M20 56 L60 68 V108 L20 96 Z" {...body} />
-      <path d="M60 68 L100 56 V96 L60 108 Z" {...soft} />
-      <path d="M32 58 L60 50 L88 58 L60 66 Z" {...accent} />
-      <ellipse cx="60" cy="58" rx="9" ry="4" fill="var(--surface)" stroke="var(--accent)" strokeWidth="2" />
-      <path d="M51 58 V24 Q51 20 55 20 H65 Q69 20 69 24 V58" {...glass} />
-      <rect x="54" y="10" width="12" height="10" rx="2" {...soft} />
+      <rect x="22" y="40" width="76" height="70" rx="2" {...body} />
+      <path d="M22 40 H98 V26 H22 Z" {...soft} />
+      <path d="M22 40 H98" {...line} />
+      <circle cx="60" cy="40" r="17" fill="var(--export-soft)" fillOpacity="0.7" stroke="var(--export)" strokeWidth="1.5" />
+      <text x="60" y="38" fontSize="7" fontWeight="700" fill="var(--export)" textAnchor="middle">BRAND</text>
+      <path d="M50 44 H70 M53 48 H67" stroke="var(--export)" strokeWidth="1" strokeLinecap="round" />
+      <path d="M48 30 Q52 27 56 29" fill="none" stroke="var(--surface)" strokeWidth="2" strokeLinecap="round" />
     </>
   ),
   "outer-carton": (
