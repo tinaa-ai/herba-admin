@@ -102,6 +102,11 @@ function migrateLegacy(merged: SimState) {
   merged.fixedCosts = merged.fixedCosts.map((c) =>
     c.id === "3pl" && c.amount === 33000000 && def3pl ? { ...c, amount: def3pl.amount, note: def3pl.note } : c,
   );
+  // 광고 판촉비 기본값을 1,100만 원에서 1,400만 원으로 바꿨어요. 옛 기본값 그대로면 새 기본값으로
+  const defAds = DEFAULT_STATE.fixedCosts.find((c) => c.id === "ads");
+  merged.fixedCosts = merged.fixedCosts.map((c) =>
+    c.id === "ads" && c.amount === 11000000 && defAds ? { ...c, amount: defAds.amount } : c,
+  );
   // 긴 이름은 잘려서 짧게 바꾸고 설명은 아래 줄(note)로 옮겼어요
   merged.fixedCosts = merged.fixedCosts.map((c) => {
     const def = DEFAULT_STATE.fixedCosts.find((d) => d.id === c.id);

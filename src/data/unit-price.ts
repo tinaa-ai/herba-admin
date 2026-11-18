@@ -98,7 +98,7 @@ export const DEFAULT_STATE: SimState = {
     { id: "storage", label: "창고 보관료", amount: 110000 },
     { id: "3pl", label: "3PL 물류비", amount: 60000000, note: "택배·보관·충전재" },
     { id: "cs", label: "CS", amount: 2200000 },
-    { id: "ads", label: "광고 판촉비 (마케팅)", amount: 11000000 },
+    { id: "ads", label: "광고 판촉비 (마케팅)", amount: 14000000 },
     { id: "service", label: "지급 수수료", amount: 550000 },
     { id: "rent", label: "사무실 임대료", amount: 3300000 },
     { id: "payroll", label: "인건비", amount: 10000000, note: "부가세 없는 비용" },
