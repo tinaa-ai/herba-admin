@@ -244,7 +244,11 @@ export function LandedCostPanel({
                   <p className="text-sale">현지 유통 마진이 100% 이상이라 계산할 수 없어요</p>
                 ) : (
                   <>
-                    <p className="text-xs text-muted">예상 현지 소비자가 (부가세 {r.vatRate}% 포함)</p>
+                    <p className="text-xs text-muted">
+                      예상 현지 소비자가 ·{" "}
+                      <b className="font-semibold text-export">유통 마진 {l.resaleMargin}% 적용</b> · 부가세{" "}
+                      {r.vatRate}% 포함
+                    </p>
                     <p className="text-xl font-semibold tabular-nums text-export">{mxn(r.shelf * sim.mxnRate)}</p>
                     <p className="text-xs tabular-nums text-muted">
                       {usd(r.shelf)} · {won(r.shelf * sim.fxRate)}원 · 한국 정가 {won(listPrice)}원의{" "}
