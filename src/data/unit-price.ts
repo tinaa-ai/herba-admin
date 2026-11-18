@@ -47,6 +47,29 @@ export type PharmacyTier = {
 export type ExportTier = { id: string; from: number; to?: number; margin: number; orderQty?: number };
 
 /** 수출(FOB) 단가 산정 입력값. 금액은 수출 영세율이라 VAT 별도(원) */
+/** 바이어가 수입할 때 내는 세금·수수료 (% 단위) */
+export type ImportTax = {
+  id: string;
+  label: string;
+  rate: number;
+  /** cif: CIF(FOB + 운임·보험) 기준 비용 · vat: CIF + 앞 비용 합계 기준 부가세(현지 판매 때 돌려받음) */
+  kind: "cif" | "vat";
+  note?: string;
+};
+
+/** 바이어 쪽 현지 도착가·소비자가 시뮬레이터 */
+export type LandedSim = {
+  /** FOB 단가를 가져올 수출 구간 */
+  tierId: string;
+  /** 개당 해상 운임·보험 (USD) */
+  freight: number;
+  taxes: ImportTax[];
+  /** 개당 현지 비용 (USD): 관세사·현지 내륙 운송 등 */
+  localCost: number;
+  /** 현지 유통 마진 % (부가세 뺀 판매가 기준) */
+  resaleMargin: number;
+};
+
 export type ExportSim = {
   /** 원/USD 환율 */
   fxRate: number;
@@ -63,6 +86,7 @@ export type ExportSim = {
   /** 판관비를 개당 원가에 넣을지 */
   includeSga: boolean;
   tiers: ExportTier[];
+  landed: LandedSim;
 };
 
 export type SimState = {
@@ -135,6 +159,17 @@ export const DEFAULT_STATE: SimState = {
       { id: "e3", from: 30000, margin: 24 },
       { id: "e4", from: 50000, margin: 20 },
     ],
+    landed: {
+      tierId: "e2",
+      freight: 0.3,
+      taxes: [
+        { id: "duty", label: "관세", rate: 25, kind: "cif" },
+        { id: "customs", label: "통관 수수료", rate: 0.8, kind: "cif", note: "멕시코 DTA 등" },
+        { id: "vat", label: "부가세", rate: 16, kind: "vat", note: "멕시코 IVA" },
+      ],
+      localCost: 0.1,
+      resaleMargin: 50,
+    },
   },
   targetMargin: 20,
   channels: [

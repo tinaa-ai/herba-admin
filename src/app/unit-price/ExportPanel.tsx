@@ -1,6 +1,7 @@
 "use client";
 
 import type { CostItem, ExportSim, ExportTier } from "@/data/unit-price";
+import { LandedCostPanel } from "./LandedCostPanel";
 import { NumberInput, pct, tierLabel, won } from "./ui";
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -318,6 +319,13 @@ export function ExportPanel({
           <li>원화·페소·엔 환산은 참고용이에요. 거래 단가는 USD예요</li>
         </ul>
       </div>
+
+      <LandedCostPanel
+        sim={sim}
+        calc={calc}
+        onChange={(fn) => onChange((s) => ({ ...s, landed: fn(s.landed) }))}
+        listPrice={listPrice}
+      />
     </div>
   );
 }
