@@ -78,15 +78,15 @@ export function LandedCostPanel({
   const r = fob !== null ? landedCalc(l, fob) : null;
 
   return (
-    <div className="mt-6 border-t border-line pt-4">
-      <p className="mb-1 px-1 text-sm font-semibold text-export">현지 금액 시뮬레이터</p>
+    <div className="mt-6 rounded-xl border border-local-line p-3 sm:p-4">
+      <p className="mb-1 px-1 text-sm font-semibold text-local">현지 금액 시뮬레이터</p>
       <p className="mb-3 px-1 text-xs leading-relaxed text-muted">
-        FOB 단가에 <b className="font-semibold text-export">바이어가 내는 운임·관세·수수료·부가세</b>를 붙여, 현지 도착
+        FOB 단가에 <b className="font-semibold text-local">바이어가 내는 운임·관세·수수료·부가세</b>를 붙여, 현지 도착
         원가와 예상 소비자가를 봐요 · 기본 세율은 멕시코 예시라 나라에 맞게 바꿔 주세요
       </p>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <div className="space-y-3 rounded-lg border border-export-line bg-export-soft p-3 text-sm">
+        <div className="space-y-3 rounded-lg border border-local-line bg-local-soft p-3 text-sm">
           <div className="flex items-center gap-2">
             <span className="flex-1">FOB 단가 기준 구간</span>
             <select
@@ -167,7 +167,7 @@ export function LandedCostPanel({
                   taxes: [...s.taxes, { id: newId(), label: "새 항목", rate: 0, kind: "cif" }],
                 }))
               }
-              className="mt-1.5 text-xs text-export hover:underline"
+              className="mt-1.5 text-xs text-local hover:underline"
             >
               + 세금·수수료 추가
             </button>
@@ -202,7 +202,7 @@ export function LandedCostPanel({
           </div>
         </div>
 
-        <div className="rounded-lg border border-export-line p-3 text-sm">
+        <div className="rounded-lg border border-local-line p-3 text-sm">
           {r === null || fob === null ? (
             <p className="text-sale">이 구간은 FOB 단가를 계산할 수 없어요 (마진 + 송금 수수료가 100% 이상)</p>
           ) : (
@@ -239,17 +239,17 @@ export function LandedCostPanel({
                   strong
                 />
               </div>
-              <div className="mt-3 rounded-lg bg-export-soft px-3 py-2.5">
+              <div className="mt-3 rounded-lg bg-local-soft px-3 py-2.5">
                 {r.shelf === null || r.shelfExVat === null ? (
                   <p className="text-sale">현지 유통 마진이 100% 이상이라 계산할 수 없어요</p>
                 ) : (
                   <>
                     <p className="text-xs text-muted">
                       예상 현지 소비자가 ·{" "}
-                      <b className="font-semibold text-export">유통 마진 {l.resaleMargin}% 적용</b> · 부가세{" "}
+                      <b className="font-semibold text-local">유통 마진 {l.resaleMargin}% 적용</b> · 부가세{" "}
                       {r.vatRate}% 포함
                     </p>
-                    <p className="text-xl font-semibold tabular-nums text-export">{mxn(r.shelf * sim.mxnRate)}</p>
+                    <p className="text-xl font-semibold tabular-nums text-local">{mxn(r.shelf * sim.mxnRate)}</p>
                     <p className="text-xs tabular-nums text-muted">
                       {usd(r.shelf)} · {won(r.shelf * sim.fxRate)}원 · 한국 정가 {won(listPrice)}원의{" "}
                       {listPrice > 0 ? Math.round(((r.shelf * sim.fxRate) / listPrice) * 100) : "—"}%
