@@ -13,7 +13,7 @@ const STORAGE_KEY = "herba.unit-price.v2";
  * 마이그레이션을 새로 넣을 때는 이 번호를 올리고 `if (version < 새 번호)` 블록을 추가해요.
  * (버전 없이 매번 돌리면 사용자가 일부러 넣은 값이 옛 기본값과 같을 때 계속 덮어써요)
  */
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const newId = () => Math.random().toString(36).slice(2, 9);
 
@@ -27,6 +27,7 @@ function loadState(): SimState | null {
     // 수출 설정에 새 칸(페소·엔 환율 등)이 생기면 기본값으로 채워요
     merged.exportSim = { ...DEFAULT_STATE.exportSim, ...parsed.exportSim };
     if (version < 1) migrateLegacy(merged);
+    if (version < 2) migrateV2(merged);
     // 채널에 새 필드가 생기면 기본값으로 채워요 (값을 덮어쓰지 않아서 매번 해도 괜찮아요)
     merged.channels = merged.channels.map((c) => {
       const def = DEFAULT_STATE.channels.find((d) => d.id === c.id);
@@ -36,6 +37,15 @@ function loadState(): SimState | null {
   } catch {
     return null;
   }
+}
+
+/** v2: 판관비 기본값을 바꿨어요. 손대지 않은 옛 기본값(3PL 3,300만 원, 광고 판촉비 1,100만 원)이면 새 기본값으로 */
+function migrateV2(merged: SimState) {
+  const OLD: Record<string, number> = { "3pl": 33000000, ads: 11000000 };
+  merged.fixedCosts = merged.fixedCosts.map((c) => {
+    const def = DEFAULT_STATE.fixedCosts.find((d) => d.id === c.id);
+    return def && OLD[c.id] === c.amount ? { ...c, amount: def.amount, note: def.note } : c;
+  });
 }
 
 /** 버전 번호가 생기기 전(0)에 저장된 값을 지금 형식으로 바꿔요. 저장할 때 버전이 붙어서 한 번만 돌아요 */
@@ -97,16 +107,6 @@ function migrateLegacy(merged: SimState) {
     ];
   }
   delete legacy.shippingCost;
-  // 3PL 물류비 기본값을 3,300만 원에서 6,000만 원으로 바꿨어요. 옛 기본값 그대로면 새 기본값으로
-  const def3pl = DEFAULT_STATE.fixedCosts.find((c) => c.id === "3pl");
-  merged.fixedCosts = merged.fixedCosts.map((c) =>
-    c.id === "3pl" && c.amount === 33000000 && def3pl ? { ...c, amount: def3pl.amount, note: def3pl.note } : c,
-  );
-  // 광고 판촉비 기본값을 1,100만 원에서 1,400만 원으로 바꿨어요. 옛 기본값 그대로면 새 기본값으로
-  const defAds = DEFAULT_STATE.fixedCosts.find((c) => c.id === "ads");
-  merged.fixedCosts = merged.fixedCosts.map((c) =>
-    c.id === "ads" && c.amount === 11000000 && defAds ? { ...c, amount: defAds.amount } : c,
-  );
   // 긴 이름은 잘려서 짧게 바꾸고 설명은 아래 줄(note)로 옮겼어요
   merged.fixedCosts = merged.fixedCosts.map((c) => {
     const def = DEFAULT_STATE.fixedCosts.find((d) => d.id === c.id);
