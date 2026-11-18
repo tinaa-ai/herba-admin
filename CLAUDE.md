@@ -41,6 +41,10 @@ The dev server does not pick up edits to `src/app/globals.css` (color tokens sta
 
 Naver shopping/brand-store domains are blocked for automated browsing; the user sends screenshots of prices instead.
 
+## Sticky notes
+
+The "+ 메모" post-its on `/unit-price` (`src/components/StickyNotes.tsx`) are shared through Supabase project `landing-page` (`zvuveiotaedwpbxieikj`), table `herba_sticky_notes`. The table has RLS on with no policies; the server reaches it only through `herba_notes_list/upsert/delete` RPCs, which check `NOTES_TOKEN` against the SHA-256 hash stored in `herba_notes_secret`. Server actions live in `src/app/unit-price/notes-actions.ts`. `NOTES_TOKEN` must be set in `.env.local` and in Vercel (Production + Preview); to rotate it, update the hash row too. The repo is public, so never put the token in code. Clients poll every 5 s; the last save wins.
+
 ## Deploy
 
 GitHub `tinaa-ai/herba-admin` → Vercel project `herba-admin` (https://herba-admin.vercel.app). Pushing `main` deploys production; other branches get preview URLs. Work has been done on `feat/competitor-comparison` and fast-forwarded into `main`. `ADMIN_PASSWORD` is set in Vercel for Production and Preview; changing it requires a redeploy.
